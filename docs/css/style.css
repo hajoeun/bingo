@@ -16,24 +16,27 @@
   margin: 0px;
   padding: 0px;
 }
-.admin_board {
-  flex: 1;
+.boards .user_board {
+  flex: 6;
 }
-.admin_board td.checked {
-  width: 36px;
-  height: 36px;
-  border: 2px solid #008000;
-  border-radius: 36px;
-}
-.user_board {
-  flex: 2;
-}
-.user_board td.checked {
+.boards .user_board td.checked {
   width: 36px;
   height: 36px;
   border: 2px solid #f00;
   border-radius: 36px;
 }
-.user_board td.checked.line {
+.boards .user_board td.checked.line {
   border: 2px solid #008000;
+}
+.boards .display_board {
+  flex: 1;
+}
+.boards .admin_board {
+  flex: 3;
+}
+.boards .admin_board td.checked {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #008000;
+  border-radius: 36px;
 }
