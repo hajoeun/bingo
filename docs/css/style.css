@@ -1,0 +1,27 @@
+.boards {
+  border: 1px solid black;
+  display: flex;
+}
+
+.admin_board {
+  border: 1px solid blue;
+}
+
+.user_board {
+  border: 1px solid purple;
+}
+
+.user_board td.checked {
+  border: 1px solid red;
+  border-radius: 10px;
+}
+
+.user_board td.checked.line {
+  border: 1px solid green;
+}
+
+.admin_board td.checked {
+  border: 1px solid green;
+  border-radius: 10px;
+}
+
