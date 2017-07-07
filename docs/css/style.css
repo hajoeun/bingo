@@ -1,27 +1,39 @@
 .boards {
-  border: 1px solid black;
   display: flex;
 }
-
+.boards table {
+  border: 2px solid #000;
+  display: inline-block;
+  margin: 10px;
+  padding: 10px;
+}
+.boards table th,
+.boards table td {
+  width: 40px;
+  height: 40px;
+  text-align: center;
+  font-size: 23px;
+  margin: 0px;
+  padding: 0px;
+}
 .admin_board {
-  border: 1px solid blue;
+  flex: 1;
 }
-
-.user_board {
-  border: 1px solid purple;
-}
-
-.user_board td.checked {
-  border: 1px solid red;
-  border-radius: 10px;
-}
-
-.user_board td.checked.line {
-  border: 1px solid green;
-}
-
 .admin_board td.checked {
-  border: 1px solid green;
-  border-radius: 10px;
+  width: 36px;
+  height: 36px;
+  border: 2px solid #008000;
+  border-radius: 36px;
 }
-
+.user_board {
+  flex: 2;
+}
+.user_board td.checked {
+  width: 36px;
+  height: 36px;
+  border: 2px solid #f00;
+  border-radius: 36px;
+}
+.user_board td.checked.line {
+  border: 2px solid #008000;
+}

@@ -1,9 +1,11 @@
 !function() {
 
-var u_num = prompt("몇명이 플레이 하시나요?");
-var b_num = prompt("몇 빙고로 할까요?");
+// var u_num = prompt("몇명이 플레이 하시나요?");
+// var b_num = prompt("몇 빙고로 할까요?");
 
-game_start(u_num || 3,  b_num || 2);
+// game_start(u_num || 2,  b_num || 2);
+
+game_start(2, 2);
 
 function game_start(u_num, b_num) {
   var admin_data = [], user_datas = [];
@@ -96,7 +98,7 @@ function game_start(u_num, b_num) {
         }
 
         if (!data.bingo && (b_num == data.line.total)) {
-          console.log("User ", i+1, " BINGO!");
+          alert("User ", i+1, " BINGO!");
           data.bingo = true;
         }
       })
