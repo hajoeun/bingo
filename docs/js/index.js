@@ -3,7 +3,7 @@
   var u_num = 2, b_num = 2;
 
   $('button#start').on('click', function() {
-    b_num = $('input[name="b_num"]').val();
+    b_num = $('input[name="b_num"]').val() || 1;
     game_start(u_num, b_num);
     $('#goal').text(b_num);
     $('.before_start').hide();
@@ -63,7 +63,7 @@
       keep_data(user_datas),
       $t => $('.user_board').append($t));
 
-    var make_admin_board = _.once(__(
+    var make_admin_board = __(
       make_bingo, make_bingo_table,
       keep_data(admin_data),
       _('on', 'click', 'td', function() {
@@ -106,7 +106,7 @@
           }
         })
       }),
-      $t => $('.admin_board').append($t)));
+      $t => $('.admin_board').append($t));
 
     $('button#pop').on('click', function() {
       var rn = _.random(1, 75), td = _.find($('.admin_board td'), td => td.innerText == rn);
