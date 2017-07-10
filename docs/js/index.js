@@ -91,27 +91,25 @@
           });
 
           if (!data.line.x1 && _.every(data, __(xLine1, isChecked))) {
-            _.each(data, __(xLine1, addLine)), data.line.total++
+            _.each(data, __(xLine1, addLine));
+            data.line.total++;
             data.line.x1 = true;
           }
 
           if (!data.line.x2 && _.every(data, __(xLine2, isChecked))) {
-            _.each(data, __(xLine2, addLine)), data.line.total++;
+            _.each(data, __(xLine2, addLine));
+            data.line.total++;
             data.line.x2 = true;
           }
 
           if (!data.bingo && (b_num == data.line.total)) {
-            alert("User" + (i+1) +"BINGO!");
-            data.bingo = true;
+            alert("User " + (i+1) + " BINGO!");
+            data.bingo = game_done = true;
           }
         })
       }),
       $t => $('.admin_board').append($t));
 
-    $('button#pop').on('click', function() {
-      var rn = _.random(1, 75), td = _.find($('.admin_board td'), td => td.innerText == rn);
-      $(td).click();
-    });
 
     $('button#reset').on('click', function() {
       $('td.checked').removeClass('checked line');
@@ -124,8 +122,14 @@
     _.all(base_arr,[make_admin_board].concat(_.map(_.range(u_num), _.c(make_user_board))));
   }
 
+  $('button#pop').on('click', function() {
+    var rn = _.random(1, 75), td = _.find($('.admin_board td'), td => td.innerText == rn);
+    $(td).click();
+  });
+
   $('button#restart').on('click', function() {
     $('table').remove();
+    $('button#reset').off('click');
     game_start(u_num, b_num);
   });
 
