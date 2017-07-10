@@ -1,9 +1,12 @@
 !function($) {
 
-  var u_num = 2, b_num = 2;
+  var u_num = 2,
+      b_num = 2,
+      isChecked = e => e.classList.contains('checked');
 
   $('button#start').on('click', function() {
-    b_num = $('input[name="b_num"]').val() || 1;
+    b_num = $('input[name="b_num"]').val();
+    u_num = $('input[name="u_num"]').val();
     game_start(u_num, b_num);
     $('#goal').text(b_num);
     $('.before_start').hide();
@@ -63,30 +66,35 @@
       keep_data(user_datas),
       $t => $('.user_board').append($t));
 
+    var addLine = td => $(td).addClass('line'),
+        xLine1 = (c, i) => c[i],
+        xLine2 = (c, i, l) => c[l.length-1-i];
+
     var make_admin_board = __(
       make_bingo, make_bingo_table,
       keep_data(admin_data),
       _('on', 'click', 'td', function() {
         $(this).addClass('checked');
-        var targetText = this.innerText, idx = find_idx(targetText);
+        var targetText = this.innerText,
+            idx = find_idx(targetText);
 
         _.each(user_datas, (data, i) => {
-          var isChecked = td => $(td).hasClass('checked'),
-              addLine = td => $(td).addClass('line'),
-              xLine1 = (c, i) => c[i],
-              xLine2 = (c, i, l) => c[l.length-1-i];
-
           _.each(data[idx], (td, i, col_tds) => {
             if (td.innerText == targetText) {
-              var $td = $(td), $row_tds = $td.closest('tr').find('td');
+              var $td = $(td),
+                  $row_tds = $td.closest('tr').find('td');
 
               $td.addClass('checked');
 
-              if (_.every($row_tds, isChecked))
-                _.each($row_tds, addLine), data.line.total++;
+              if (_.every($row_tds, isChecked)) {
+                _.each($row_tds, addLine);
+                data.line.total++;
+              }
 
-              if (_.every(col_tds, isChecked))
-                _.each(col_tds, addLine), data.line.total++;
+              if (_.every(col_tds, isChecked)) {
+                _.each(col_tds, addLine);
+                data.line.total++;
+              }
             }
           });
 
@@ -119,18 +127,29 @@
       });
     });
 
-    _.all(base_arr,[make_admin_board].concat(_.map(_.range(u_num), _.c(make_user_board))));
+    _.all(
+      base_arr,
+      _.go(
+        _.range(u_num),
+        _.map(_.c(make_user_board)),
+        ubs => [make_admin_board].concat(ubs)));
   }
 
   $('button#pop').on('click', function() {
-    var rn = _.random(1, 75), td = _.find($('.admin_board td'), td => td.innerText == rn);
-    $(td).click();
+    _.go(
+      $('.admin_board td'),
+      _.reject(isChecked),
+      _.shuffle, _.first,
+      _('click'));
   });
+
 
   $('button#restart').on('click', function() {
     $('table').remove();
     $('button#reset').off('click');
-    game_start(u_num, b_num);
+    $('#goal').text("");
+    $('.before_start').show();
+    $('.after_start').hide();
   });
 
 }(jQuery);

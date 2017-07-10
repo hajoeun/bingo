@@ -8,26 +8,28 @@
 <body>
   <div class="boards">
     <div class="user_board">
-      <h3>User</h3>
+      <h2>빙고판</h2>
     </div>
     <div class="display_board">
-      <h3>목표 빙고</h3>
-      <p id="goal"></p>
+      <h2>목표 빙고</h2>
+      <h3 id="goal"></h3>
     </div>
     <div class="admin_board">
-      <h3>Admin</h3>
+      <h2>상황판</h2>
     </div>
   </div>
   <div class="input_group">
     <div class="before_start">
-      <label>몇 빙고?</label>
-      <input type="number" name="b_num">
-      <button id="start">Start</button>
+      <h3>목표 빙고</h3>
+      <input type="number" name="b_num" value=2>
+      <h3>참가 인원</h3>
+      <input type="number" name="u_num" value=2>
+      <button id="start">시작</button>
     </div>
     <div class="after_start" hidden>
-      <button id="pop">Pop</button>
-      <button id="reset">Reset</button>
-      <button id="restart">Restart</button>
+      <button id="restart">재시작</button>
+      <button id="reset">지우기</button>
+      <button id="pop">뽑기</button>
     </div>
   </div>
 

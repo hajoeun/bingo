@@ -1,3 +1,12 @@
+@font-face {
+  font-family: "Dohyeon";
+  src: url("../font/DOHYEON.otf");
+}
+h2,
+h3 {
+  font-family: "Dohyeon";
+  text-align: center;
+}
 .boards {
   display: flex;
 }
@@ -18,6 +27,7 @@
 }
 .boards .user_board {
   flex: 6;
+  text-align: center;
 }
 .boards .user_board td.checked {
   width: 36px;
@@ -30,9 +40,11 @@
 }
 .boards .display_board {
   flex: 1;
+  text-align: center;
 }
 .boards .admin_board {
   flex: 3;
+  text-align: center;
 }
 .boards .admin_board td.checked {
   width: 36px;
@@ -40,7 +52,28 @@
   border: 2px solid #008000;
   border-radius: 36px;
 }
-button {
+.input_group {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+}
+.input_group h3 {
+  display: inline-block;
+  margin: 0 20px;
+}
+.input_group input[type=number] {
+  font-size: 20px;
+  width: 50px;
+  height: 50px;
+  text-align: center;
+  outline: none;
+}
+.input_group input[type=number]::-webkit-inner-spin-button,
+.input_group input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.input_group button {
   text-decoration: none;
   font-size: 2rem;
   color: #fff;
@@ -50,22 +83,22 @@ button {
   border-radius: 10px;
   transition: all 0.1s;
   text-shadow: 0px -2px rgba(0,0,0,0.44);
-  font-family: 'Lobster', cursive;
+  font-family: "Dohyeon";
 }
-button:active {
+.input_group button:active {
   transform: translateY(3px);
 }
-button#pop {
+.input_group button#pop {
   background-color: #008000;
   border-bottom: 5px solid #003d00;
 }
-button#pop:active {
+.input_group button#pop:active {
   border-bottom: 2px solid #165195;
 }
-button#start {
+.input_group button#start {
   background-color: #ff521e;
   border-bottom: 5px solid #c1370e;
 }
-button#start:active {
+.input_group button#start:active {
   border-bottom: 2px solid #c1370e;
 }
