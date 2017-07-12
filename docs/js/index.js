@@ -66,7 +66,7 @@
       keep_data(user_datas),
       $t => $('.user_board').append($t));
 
-    var addLine = td => $(td).addClass('line'),
+    var addLine = __(D, D.addClass('line')),
         xLine1 = (c, i) => c[i],
         xLine2 = (c, i, l) => c[l.length-1-i];
 
@@ -74,17 +74,17 @@
       make_bingo, make_bingo_table,
       keep_data(admin_data),
       _('on', 'click', 'td', function() {
-        $(this).addClass('checked');
+        D.addClass(D(this), 'checked');
         var targetText = this.innerText,
             idx = find_idx(targetText);
 
         _.each(user_datas, (data, i) => {
           _.each(data[idx], (td, i, col_tds) => {
             if (td.innerText == targetText) {
-              var $td = $(td),
+              var $td = D(td),
                   $row_tds = $td.closest('tr').find('td');
 
-              $td.addClass('checked');
+              D.addClass($td, 'checked');
 
               if (_.every($row_tds, isChecked)) {
                 _.each($row_tds, addLine);
@@ -120,7 +120,7 @@
 
 
     $('button#reset').on('click', function() {
-      $('td.checked').removeClass('checked line');
+      D.removeClass(D('td.checked'), 'checked line');
       _.each(user_datas, d => {
         d.bingo = false;
         d.line = { x1: false, x2: false, total: 0 };
