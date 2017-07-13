@@ -230,6 +230,11 @@
     return els;
   };
 
+  $.appendTo = function f(els, target) {
+    if (arguments.length == 1) return _(f, _, els);
+    return $.append(target, els);
+  };
+
   function _is_win(obj) { return obj != null && obj == obj.window; }
   function _is_document(obj) { return obj != null && obj.nodeType == 9; }
   function _check_win(els) { return _is_win(els) || _is_win(els[0]) }

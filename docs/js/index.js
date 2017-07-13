@@ -64,7 +64,7 @@
       _.shuffle, make_bingo,
       cut, make_bingo_table,
       keep_data(user_datas),
-      $t => D.append($('.user_board'), $t));
+      D.appendTo(D('.user_board')));
 
     var addLine = __(D, D.addClass('line')),
         xLine1 = (c, i) => c[i],
@@ -74,7 +74,7 @@
       make_bingo, make_bingo_table,
       keep_data(admin_data),
       _('on', 'click', 'td', function() {
-        D.addClass(D(this), 'checked');
+        D.addClass(this, 'checked');
         var targetText = this.innerText,
             idx = find_idx(targetText);
 
@@ -116,7 +116,7 @@
           }
         })
       }),
-      $t => $('.admin_board').append($t));
+      D.appendTo(D('.admin_board')));
 
 
     $('button#reset').on('click', function() {
