@@ -8,7 +8,7 @@
     b_num = $('input[name="b_num"]').val();
     u_num = $('input[name="u_num"]').val();
     game_start(u_num, b_num);
-    $('#goal').text(b_num);
+    D.text(D('#goal'), b_num);
     $('.before_start').hide();
     $('.after_start').show();
   });
@@ -64,7 +64,7 @@
       _.shuffle, make_bingo,
       cut, make_bingo_table,
       keep_data(user_datas),
-      $t => $('.user_board').append($t));
+      $t => D.append($('.user_board'), $t));
 
     var addLine = __(D, D.addClass('line')),
         xLine1 = (c, i) => c[i],
@@ -81,7 +81,7 @@
         _.each(user_datas, (data, i) => {
           _.each(data[idx], (td, i, col_tds) => {
             if (td.innerText == targetText) {
-              var $td = D(td),
+              var $td = $(td),
                   $row_tds = $td.closest('tr').find('td');
 
               D.addClass($td, 'checked');
@@ -145,9 +145,9 @@
 
 
   $('button#restart').on('click', function() {
-    $('table').remove();
+    D.remove(D('table'));
     $('button#reset').off('click');
-    $('#goal').text("");
+    D.text(D('#goal'), "");
     $('.before_start').show();
     $('.after_start').hide();
   });
