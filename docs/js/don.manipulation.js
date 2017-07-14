@@ -1,7 +1,5 @@
 !function($) {
   // if (window.jQuery) window.jq = window.jQuery;
-  var classOnly = /^\.([\w\-]+)$/
-    , idOnly = /^#([\w\-]+)$/;
   var ___ = {};
   var slice = Array.prototype.slice;
   function _(func) {
@@ -49,6 +47,15 @@
     for (var i = 0, len = _length(arr); i < len; i++) if (predi(arr[i], i)) return arr[i];
     return undefined;
   }
+
+  function _flat(new_arr, arr, noDeep, start){
+    _each(arr, function(v) {
+      if (!_is_arr_like(v) || (!Array.isArray(v) && !(!!(v && v.callee)))) return new_arr.push(v);
+      noDeep ? _each(v, function(v) { new_arr.push(v); }) : _flat(new_arr, v, noDeep);
+    }, start);
+    return new_arr;
+  }
+  function _flatten(arr, noDeep, start) { return _flat([], arr, noDeep, start); }
 
   function _is_fn(o) { return typeof o == 'function'; }
   function _is_str(o) { return typeof o == 'string'; }
@@ -166,18 +173,13 @@
   $.remove = function f(els, selector) {
     if (_is_str(els)) return _(f, _, els);
     if (selector) {
-      var byClass = selector.match(classOnly), byId = selector.match(idOnly);
-      function sel_match(el) {
-        if (byClass) return el.classList.contains(byClass[1]);
-        if (byId) return el.id == byId[1];
-        return el.nodeName == selector.toUpperCase();
-      }
-      if (_is_arr_like(els)) els = els.filter(sel_match);
-      else if (!sel_match(els)) return els;
+      var match_sel = function(el) { return el.matches(selector) };
+      if (_is_arr_like(els)) els = els.filter(match_sel);
+      else if (!match_sel(els)) return els;
     }
 
-    function remove(el) { el.parentNode.removeChild(el); }
-    _is_arr_like(els) ? _each(els, remove) : remove(els, 0);
+    var remove_child = function(el) { el.parentNode.removeChild(el); };
+    _is_arr_like(els) ? _each(els, remove_child) : remove_child(els, 0);
     return els;
   };
 
@@ -208,32 +210,77 @@
     return els;
   };
 
-  $.append = function f(els, html) {
-    if (arguments.length == 1) return _(f, _, els);
-    if (_is_fn(html)) {
-      var fn = html, set_html = function(el, i) { html = fn(i, el.innerHTML) };
-      _is_arr_like(els) ? set_html(els[els.length-1], els.length-1) : set_html(els, 0);
+  function make_pend(type) { // clone 작업
+    return function f(els, content) {
+      if (arguments.length == 1) return _(f, _, els);
+      if (_is_fn(content)) {
+        var fn = content, set_content = function(el, i) { content = fn(i, el.innerHTML) };
+        _is_arr_like(els) ? set_content(els[els.length-1], els.length-1) : set_content(els, 0);
+      }
+      if (arguments.length > 2) content = _flatten(slice.call(arguments, 1));
+      if (_is_el(content)) return (_is_arr_like(els) ? els[els.length-1] : els).insertAdjacentElement(type, content), els;
+      if (_is_el(content[0]))
+        return _is_arr_like(els) ?
+          _each(content, function(elem) { els[els.length-1].insertAdjacentElement(type, elem); }) :
+          _each(content, function(elem) { els.insertAdjacentElement(type, elem); }), els;
+
+      var insertHTML = function(el) {
+        var insert = function(html) { el.insertAdjacentHTML(type, html); };
+        Array.isArray(content) ? _each(content, insert) : insert(content);
+      };
+      _is_arr_like(els) ? _each(els, insertHTML) : insertHTML(els);
+      return els;
     }
+  }
 
-    if (_is_el(html))
-      return (_is_arr_like(els) ? els[els.length-1] : els).appendChild(html), els;
-    if (_is_el(html[0]))
-      return _is_arr_like(els) ?
-        _each(html, function(htm) { els[els.length-1].appendChild(htm); }) :
-        _each(html, function(htm) { els.appendChild(htm); }), els;
+  $.append = make_pend("beforeend");
 
-    var insertHTML = function(el) {
-      var insert = function(htm) { el.insertAdjacentHTML("beforeend", htm); };
-      Array.isArray(html) ? _each(html, insert) : insert(html);
-    };
-    _is_arr_like(els) ? _each(els, insertHTML) : insertHTML(els);
-    return els;
-  };
+  $.prepend = make_pend("afterbegin");
 
   $.appendTo = function f(els, target) {
     if (arguments.length == 1) return _(f, _, els);
     return $.append(target, els);
   };
+
+  $.prependTo = function f(els, target) {
+    if (arguments.length == 1) return _(f, _, els);
+    return $.prepend(target, els);
+  };
+
+  function make_insert(type) {
+    var isBefore = type == 'before';
+
+    return function f(els, content) {
+      if (arguments.length == 1) return _(f, _, els);
+
+      var target = content;
+      var insert = function(tar, ori) {
+        if (arguments.length == 1)
+          return isBefore ?
+            function(el) { tar.parentNode.insertBefore(el, tar) } :
+            function(el) { tar.parentNode.insertBefore(el, tar.nextSibling) };
+
+        var last = tar;
+        return isBefore ?
+          function(te, i) { return te.parentNode.insertBefore(last == i ? ori : ori.cloneNode(true), te) } :
+          function(te, i) { return te.parentNode.insertBefore(last == i ? ori : ori.cloneNode(true), te.nextSibling) };
+      };
+
+      if (_is_str(content)) target = document.querySelectorAll(content);
+      if (target.length && _is_el(target[0])) {
+        return _is_arr_like(els) ?
+          _flatten(_map(els, function(el) { return _map(target, insert(target.length-1, el)) })) :
+          _map(target, insert(target.length-1, els));
+      }
+
+      _is_arr_like(els) ? _each(els, insert(target)) : insert(target)(els);
+      return els;
+    }
+  }
+
+  $.insertBefore = make_insert('before');
+
+  $.insertAfter = make_insert('after');
 
   function _is_win(obj) { return obj != null && obj == obj.window; }
   function _is_document(obj) { return obj != null && obj.nodeType == 9; }
