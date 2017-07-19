@@ -9,8 +9,8 @@
     u_num = $('input[name="u_num"]').val();
     game_start(u_num, b_num);
     D.text(D('#goal'), b_num);
-    $('.before_start').hide();
-    $('.after_start').show();
+    D.hide(D('.before_start'));
+    D.show(D('.after_start'));
   });
 
   function game_start(u_num, b_num) {
@@ -148,8 +148,8 @@
     D.remove(D('table'));
     $('button#reset').off('click');
     D.text(D('#goal'), "");
-    $('.before_start').show();
-    $('.after_start').hide();
+    D.show(D('.before_start'));
+    D.hide(D('.after_start'));
   });
 
 }(jQuery);
