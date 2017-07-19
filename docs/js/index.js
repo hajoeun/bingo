@@ -4,9 +4,9 @@
       b_num = 2,
       isChecked = e => e.classList.contains('checked');
 
-  $('button#start').on('click', function() {
-    b_num = $('input[name="b_num"]').val();
-    u_num = $('input[name="u_num"]').val();
+  D.on(D('button#start'), 'click', function() {
+    b_num = D.val(D('input[name="b_num"]'));
+    u_num = D.val(D('input[name="u_num"]'));
     game_start(u_num, b_num);
     D.text(D('#goal'), b_num);
     D.hide(D('.before_start'));
@@ -135,18 +135,19 @@
         ubs => [make_admin_board].concat(ubs)));
   }
 
-  $('button#pop').on('click', function() {
-    _.go(
-      $('.admin_board td'),
-      _.reject(isChecked),
-      _.shuffle, _.first,
-      _('click'));
-  });
+  _.go(D('button#pop'),
+    D.on('click', function() {
+      _.go(
+        $('.admin_board td'),
+        _.reject(isChecked),
+        _.shuffle, _.first,
+        _('click'));
+    })
+  );
 
-
-  $('button#restart').on('click', function() {
+  D.on(D('button#restart'), 'click', function() {
     D.remove(D('table'));
-    $('button#reset').off('click');
+    D.off(D('button#reset'), 'click');
     D.text(D('#goal'), "");
     D.show(D('.before_start'));
     D.hide(D('.after_start'));
