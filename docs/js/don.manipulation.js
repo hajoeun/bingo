@@ -48,8 +48,16 @@
     for (var i = 0, keys = _keys(obj), len = keys.length; i < len; i++) iter(obj[keys[i]], keys[i]);
     return obj;
   }
+  function _eachr(arr, iter) {
+    for (var i = _length(arr)-1; i > -1; i--) iter(arr[i], i);
+    return arr;
+  }
   function _map(arr, iter) {
     for (var res = [], i = 0, len = _length(arr); i < len; i++) res[i] = iter(arr[i], i);
+    return res;
+  }
+  function _mapr(arr, iter) {
+    for (var res = [], i = _length(arr)-1; i > -1; i--) res[i] = iter(arr[i], i);
     return res;
   }
   /*function _map2(coll, iter) {
@@ -61,6 +69,8 @@
     for (var i = 0, len = _length(arr); i < len; i++) if (predi(arr[i], i)) return arr[i];
     return undefined;
   }
+
+  function _idtt(v) { return v; }
 
   var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
   var _is_anf = _is_arr_like_not_form;
@@ -278,6 +288,83 @@
   $.prepend_to = $.prependTo = _insert('afterbegin', true);
   $.append_to = $.appendTo = _insert('beforeend', true);
 
+  // 기존 append가 훨씬 좋다. 첫번째 방법으로 가자, 코드를 조금만 더 다듬고 다른 녀석들에게 adjacent를 붙여주자
+
+  $.append2 = _make_insert('append');
+  $.appendTo2 = _make_insert('append', true);
+
+  $.prepend2 = _make_insert('prepend');
+  $.prependTo2 = _make_insert('prepend', true);
+
+  $.after2 = _make_insert('after');
+  $.insertAfter2 = _make_insert('after', true);
+
+  $.before2 = _make_insert('before');
+  $.insertBefore2 = _make_insert('before', true);
+
+  function _make_insert(type, reverse) {
+
+    var _insert = function(target, elem) {
+      var last = target.length - 1 || 0;
+      var fns = {
+        append: function(te, i) { return te.appendChild(last == i ? elem : elem.cloneNode(true)) },
+        prepend: function(te, i) { return te.insertBefore(last == i ? elem : elem.cloneNode(true), te.firstChild) },
+        after: function(te, i) { return te.parentNode.insertBefore(last == i ? elem : elem.cloneNode(true), te.nextSibling) },
+        before: function(te, i) { return te.parentNode.insertBefore(last == i ? elem : elem.cloneNode(true), te) }
+      };
+
+      if (_is_anf(target)) {
+        if (reverse) return _map(target, fns[type]);
+        _each(target, fns[type]);
+      } else {
+        fns[type](target, 0);
+      }
+
+      return reverse ? elem : target;
+    };
+
+    return function f(els, content) {
+      if (arguments.length == 1) return _(f, _, els);
+
+      var target = els, elem = content;
+      if (reverse) target = _is_str(content) ? $(content) : content, elem = els;
+      if (arguments.length > 2) elem = _flatten(slice.call(arguments, 1));
+
+      if (_is_el(elem)) return _insert(target, elem);
+
+      if (_is_fn(elem)) {
+        var fn = elem, exec_fn = function(el, i) {
+          if (reverse) return f(fn(i, el.innerHTML), el);
+          f(el, fn(i, el.innerHTML));
+        };
+        return _is_anf(target) ? _each(target, exec_fn) : exec_fn(target, 0);
+      }
+
+      if (elem == undefined) return reverse ? elem : target;
+      if (_is_str(elem)) {
+        if (/^<.*>.*/.test(elem)) {
+          var tmp = document.createElement('div');
+          tmp.insertAdjacentHTML('afterbegin', elem);
+          if (reverse) return f(_map(tmp.childNodes, _idtt), target);
+          return f(target, _map(tmp.childNodes, _idtt));
+        }
+        if (reverse) elem = document.querySelectorAll(elem);
+        else return _insert(target, document.createTextNode(elem));
+      }
+
+      if (_is_anf(elem)) {
+        if (type == 'append') {
+          if (reverse) return _flatten(_map(elem, function(el) { return f(el, target) }));
+          _each(elem, function(el) { f(target, el) });
+        } else {
+          if (reverse) return _flatten(_mapr(elem, function(el) { return f(el, target) }));
+          _eachr(elem, function(el) { f(target, el) });
+        }
+      }
+      return reverse ? elem : target;
+    }
+  }
+
   var default_display = {};
 
   function _get_default_display(el) {
@@ -293,8 +380,7 @@
 
     if (display == 'none') display = 'block';
 
-    default_display[node_name] = display;
-    return display;
+    return default_display[node_name] = display;
   }
 
   function _show_hide(show) {
@@ -339,10 +425,12 @@
     return _is_anf(els) ? _each(els, fn) : fn(els);
   };
 
-  $.clone = function() {};
+  $.clone = function(els) {
+    var clone_node = function(el) { return el.cloneNode(true); };
+    return _is_anf(els) ? _map(els, clone_node) : clone_node(els)
+  };
+
   $.empty = function() {};
-
-
 
   function _check_boxSizing (el) {
     return $.css(el, "boxSizing") == "border-box"
@@ -593,7 +681,7 @@
 
     if (arguments.length == 1) {
       function get_iter(el) {
-        if (el.nodeName == "SELECT") {
+        if (is_node_name(el, "select")) {
 
           function select_iter(el) { return el.selected && el.value }
           return push_map(el.options, select_iter);
@@ -628,7 +716,7 @@
       if ((el.type == "radio" || el.type == "checkbox") && Array.isArray(value)) {
         el.checked = _is_str(_find(value, function(val) {return val == el.value}))
         return;
-      } else if (el.nodeName == "SELECT") {
+      } else if (is_node_name(el, "select")) {
         if (Array.isArray(value)) {
 
           var list = value;
@@ -666,6 +754,33 @@
     }
     return el
   }
+
+  $.el = function f(html) {
+    if (/^</.test(html)) {
+      var div = document.createElement('div');
+      div.innerHTML = html;
+      return div.children;
+    } else {
+      return document.createElement(html);
+    }
+  };
+
+  $.frag = function f(html) {
+    var docFrag = document.createDocumentFragment();
+    if (/^</.test(html)) {
+      var div = document.createElement('div');
+      div.innerHTML= html;
+      var len = div.children.length
+      for (var i=0; i<len; i++) {
+        docFrag.appendChild(div.children[0]);
+      }
+    } else {
+      var some = document.createElement(html);
+      docFrag.append(some);
+    }
+
+    return docFrag;
+  };
 
   $.scrollTop = function f(el, val) {
     if(!(_is_el(el) || _is_win(el) || _is_document(el))) return _(f, _, el);
