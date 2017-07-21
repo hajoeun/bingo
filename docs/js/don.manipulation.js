@@ -35,10 +35,7 @@
   function _length(arr) { return arr == null ? undefined : arr.length; }
   function _is_object(obj) { return typeof obj == 'object' && !!obj; }
   function _keys(obj) { return _is_object(obj) ? Object.keys(obj) : []; }
-
-  function _contains(list, value) {
-    return find(list, function(val){return val == value}) != undefined;
-  }
+  function _idtt(val) { return val; }
 
   function _each(arr, iter) {
     for (var i = 0, len = _length(arr); i < len; i++) iter(arr[i], i);
@@ -60,17 +57,13 @@
     for (var res = [], i = _length(arr)-1; i > -1; i--) res[i] = iter(arr[i], i);
     return res;
   }
-  /*function _map2(coll, iter) {
-   for (var res = [], i = 0, keys = _keys(coll), len = keys.length; i < len; i++)
-   res[i] = iter(coll[keys[i]], keys[i]);
-   return res;
-   }*/
   function _find(arr, predi) {
     for (var i = 0, len = _length(arr); i < len; i++) if (predi(arr[i], i)) return arr[i];
     return undefined;
   }
-
-  function _idtt(v) { return v; }
+  function _contains(arr, value) {
+    return _find(arr, function(val) { return val == value }) != undefined;
+  }
 
   var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
   var _is_anf = _is_arr_like_not_form;
@@ -89,45 +82,50 @@
   }
   function _flatten(arr, noDeep, start) { return _flat([], arr, noDeep, start); }
 
+  function _push_map(list, iter) {
+    for (var i = 0, len = list.length, res = [], val; i < len; i++) {
+      if (val = iter(list[i], i, list)) res.push(val);
+    }
+    return res;
+  }
+
   function _is_fn(o) { return typeof o == 'function'; }
   function _is_str(o) { return typeof o == 'string'; }
   function _is_numeric(n) { return !isNaN(parseFloat(n)) && isFinite(n); }
   function _is_el(obj) { return !!(obj && obj.nodeType === 1) }
 
-  function handle_class(method, class_name) {
-    var is_fn = _is_fn(class_name);
-    return function(el, i) {
-      var val = is_fn ? class_name(i, el) : class_name;
-      if (val)
-        if (/\s/.test(val)) _each(val.split(" "), function(v) { el.classList[method](v); });
-        else el.classList[method](val);
-    }
-  }
-  $.add_class = $.addClass = function f(els, class_name) {
-    if (arguments.length == 1) return _(f, _, els);
-    var add_class = handle_class('add', class_name);
-    _is_anf(els) ? _each(els, add_class) : add_class(els, 0);
-    return els;
-  };
+  function _check_boxSizing (el) { return $.css(el, 'boxSizing') == 'border-box'; }
+  function _display_is_none (el) { return $.css(el, 'display') == 'none'; }
+  function _is_node_name(el, name) { return el && el.nodeName && el.nodeName.toLowerCase() === name.toLowerCase(); }
+  function _parse_float_only_numeric(n) { return _is_numeric(n) ? parseFloat(n) : n; }
 
-  $.remove_class = $.removeClass = function f(els, class_name) {
-    if (arguments.length == 1) return _(f, _, els);
-    var remove_class = handle_class('remove', class_name);
-    _is_anf(els) ? _each(els, remove_class) : remove_class(els, 0);
-    return els;
-  };
+  function _make_class(method) {
+    var handle_class = function (class_name) {
+      var is_fn = _is_fn(class_name);
+      return function(el, i) {
+        var val = is_fn ? class_name(i, el) : class_name;
+        if (val)
+          if (/\s/.test(val)) _each(val.split(" "), function(v) { el.classList[method](v); });
+          else el.classList[method](val);
+      }
+    };
+
+    return function f(els, class_name) {
+      if (arguments.length == 1) return _(f, _, els);
+      var class_fn = handle_class(class_name);
+      _is_anf(els) ? _each(els, class_fn) : class_fn(els, 0);
+      return els;
+    };
+  }
+
+  $.add_class = $.addClass = _make_class('add');
+  $.remove_class = $.removeClass = _make_class('remove');
+  $.toggle_class = $.toggleClass = _make_class('toggle');
 
   $.has_class = $.hasClass = function f(els, class_name) {
     if (arguments.length == 1) return _(f, _, els);
     function some_class(el) { return el.classList.contains(class_name); }
     return _is_anf(els) ? (_find(els, some_class) !== undefined) : some_class(els);
-  };
-
-  $.toggle_class = $.toggleClass = function f(els, class_name) {
-    if (arguments.length == 1) return _(f, _, els);
-    var toggle_class = handle_class('toggle', class_name);
-    _is_anf(els) ? _each(els, toggle_class) : toggle_class(els, 0);
-    return els;
   };
 
   $.attr = function f(els, attr_value, attr_value) {
@@ -173,7 +171,7 @@
 
   function _check_css_num (value, p_name) {
     if (_is_str(value)) return value;
-    return css_number[p_name] ? value : value + "px"
+    return css_number[p_name] ? value : value + "px";
   }
 
   $.css = function f(els, prop_name, prop_value) {
@@ -231,6 +229,10 @@
     return els;
   };
 
+  $.textTo = function f(els) {
+    if (_is_el_or_els(els)) return _($.text, els);
+  };
+
   $.html = function f(els, html) {
     if (_is_str(els) || _is_fn(els)) return _(f, _, els);
     if (html == undefined)
@@ -241,69 +243,11 @@
     return els;
   };
 
-  function _insert(type, reverse) {
-    return function f(els, content) {
-      if (arguments.length == 1) return _(f, _, els);
-
-      var target = els, elem = content;
-      if (reverse) { target = _is_str(content) ? document.querySelectorAll(content) : content, elem = els; }
-      if (arguments.length > 2) { elem = _flatten(slice.call(arguments, 1)); }
-      if (_is_fn(elem)) {
-        var fn = elem, exec_fn = function(el, i) { f(el, fn(i, el.innerHTML)); };
-        return _is_anf(target) ? _each(target, exec_fn) : exec_fn(target, 0), target;
-      }
-      if (elem == undefined) return els;
-      if (_is_str(elem)) {
-        if (/^<.*>.*/.test(elem)) {
-          var insert_html = function(te) { te.insertAdjacentHTML(type, elem); };
-          return _is_anf(target) ? _each(target, insert_html) : insert_html(target), target;
-        }
-        if (reverse) elem = document.querySelectorAll(elem);
-
-        else {
-          var insert_text = function(te) { te.insertAdjacentText(type, elem); };
-          return _is_anf(target) ? _each(target, insert_text) : insert_text(target), target;
-        }
-      }
-      if (_is_anf(elem)) {
-        if (reverse) return _flatten(_map(elem, function(el) { return f(el, target) }));
-        return _each(elem, function(el) { f(target, el) }), target;
-      }
-
-      var last = target.length-1 || 0,
-        insert_elem = function(te, i) { return te.insertAdjacentElement(type, last == i ? elem : elem.cloneNode(true)) };
-
-      if (reverse) return _is_anf(target) ? _map(target, insert_elem) : insert_elem(target, 0);
-      return _is_anf(target) ? _each(target, insert_elem) : insert_elem(target, 0), target;
-    }
-  }
-
-  $.before = _insert('beforebegin');
-  $.after = _insert('afterend');
-  $.prepend = _insert('afterbegin');
-  $.append = _insert('beforeend');
-
-  $.insert_before = $.insertBefore = _insert('beforebegin', true);
-  $.insert_after = $.insertAfter = _insert('afterend', true);
-  $.prepend_to = $.prependTo = _insert('afterbegin', true);
-  $.append_to = $.appendTo = _insert('beforeend', true);
-
-  // 기존 append가 훨씬 좋다. 첫번째 방법으로 가자, 코드를 조금만 더 다듬고 다른 녀석들에게 adjacent를 붙여주자
-
-  $.append2 = _make_insert('append');
-  $.appendTo2 = _make_insert('append', true);
-
-  $.prepend2 = _make_insert('prepend');
-  $.prependTo2 = _make_insert('prepend', true);
-
-  $.after2 = _make_insert('after');
-  $.insertAfter2 = _make_insert('after', true);
-
-  $.before2 = _make_insert('before');
-  $.insertBefore2 = _make_insert('before', true);
+  $.htmlTo = function f(els) {
+    if (_is_el_or_els(els)) return _($.html, els);
+  };
 
   function _make_insert(type, reverse) {
-
     var _insert = function(target, elem) {
       var last = target.length - 1 || 0;
       var fns = {
@@ -327,31 +271,30 @@
       if (arguments.length == 1) return _(f, _, els);
 
       var target = els, elem = content;
-      if (reverse) target = _is_str(content) ? $(content) : content, elem = els;
+
+      if (reverse) {
+        target = _is_str(content) ? $(content) : content;
+        elem = els;
+      }
       if (arguments.length > 2) elem = _flatten(slice.call(arguments, 1));
 
       if (_is_el(elem)) return _insert(target, elem);
-
-      if (_is_fn(elem)) {
-        var fn = elem, exec_fn = function(el, i) {
-          if (reverse) return f(fn(i, el.innerHTML), el);
-          f(el, fn(i, el.innerHTML));
-        };
-        return _is_anf(target) ? _each(target, exec_fn) : exec_fn(target, 0);
+      if (!reverse && _is_fn(elem)) {
+        var fn = elem, exec_fn = function(el, i) { f(el, fn(i, el.innerHTML)) };
+        _is_anf(target) ? _each(target, exec_fn) : exec_fn(target, 0);
+        return target;
       }
-
       if (elem == undefined) return reverse ? elem : target;
       if (_is_str(elem)) {
         if (/^<.*>.*/.test(elem)) {
-          var tmp = document.createElement('div');
-          tmp.insertAdjacentHTML('afterbegin', elem);
-          if (reverse) return f(_map(tmp.childNodes, _idtt), target);
-          return f(target, _map(tmp.childNodes, _idtt));
+          var temp = document.createElement('div');
+          temp.innerHTML = elem;
+          if (reverse) return f(_map(temp.childNodes, _idtt), target);
+          return f(target, _map(temp.childNodes, _idtt));
         }
         if (reverse) elem = document.querySelectorAll(elem);
         else return _insert(target, document.createTextNode(elem));
       }
-
       if (_is_anf(elem)) {
         if (type == 'append') {
           if (reverse) return _flatten(_map(elem, function(el) { return f(el, target) }));
@@ -365,6 +308,18 @@
     }
   }
 
+  $.append = _make_insert('append');
+  $.prepend = _make_insert('prepend');
+
+  $.appendTo = $.append_to = _make_insert('append', true);
+  $.prependTo = $.prepend_to = _make_insert('prepend', true);
+
+  $.after = _make_insert('after');
+  $.before = _make_insert('before');
+
+  $.insertAfter = $.insert_after = _make_insert('after', true);
+  $.insertBefore = $.insert_before = _make_insert('before', true);
+
   var default_display = {};
 
   function _get_default_display(el) {
@@ -373,7 +328,6 @@
     if (display) return display;
 
     var temp, doc = el.ownerDocument;
-
     temp = doc.body.appendChild(doc.createElement(node_name));
     display = $.css(temp, 'display');
     temp.parentNode.removeChild(temp);
@@ -383,7 +337,7 @@
     return default_display[node_name] = display;
   }
 
-  function _show_hide(show) {
+  function _make_show_hide(show) {
     var show_hide;
     if (show) {
       show_hide = function(el) {
@@ -403,24 +357,21 @@
       };
     }
 
-    return function(els) {
-      return _is_anf(els) ? _each(els, show_hide) : show_hide(els), els;
-    };
+    return function(els) { _is_anf(els) ? _each(els, show_hide) : show_hide(els); return els; };
   }
 
-  $.show = _show_hide(true);
-  $.hide = _show_hide(false);
+  $.show = _make_show_hide(true);
+  $.hide = _make_show_hide(false);
 
-  var is_hidden_within_tree = function(el) {
+  function is_hidden_within_tree(el) {
     return el.style.display == 'none' ||
       el.style.display == '' &&
       (el.ownerDocument && el.ownerDocument.contains(el)) &&
       $.css(el, 'display') == 'none';
-  };
+  }
 
   $.toggle = function(els, state) {
     if (typeof state === "boolean") { return $[state ? 'show' : 'hide'](els); }
-
     var fn = function(el) { $[is_hidden_within_tree(el) ? 'show' : 'hide'](el); };
     return _is_anf(els) ? _each(els, fn) : fn(els);
   };
@@ -432,38 +383,14 @@
 
   $.empty = function() {};
 
-  function _check_boxSizing (el) {
-    return $.css(el, "boxSizing") == "border-box"
-  }
-  //
-  // function parseFloat (value) {
-  //   return _is_str(value) ? value.split("px")[0] : value
-  // }
-
-
-  function _display_is_none (el) {
-    return $.css(el, 'display') == "none"
-  }
-  function _lower_case_first_letter (str) {
-    return str.charAt(0).toLowerCase() + str.slice(1)
-  }
-
-  function _upper_case_first_letter (str) {
-    return str.charAt(0).toUpperCase() + str.slice(1)
-  }
-
-
-  function _key_val_arr_like(els, key) {
-    return _is_anf(els) ? els.map(function(v) { return v[key] }) : els[key];
-  }
 
   function wid_hei_fn(wid_hei_type, wid_hei, window_width_type) {
+    // wid_hei_type 1: outer, 2: innerWidth, 3: width
 
     function _get_doc_wid_hei(els, wid_hei) {
-      var w_h = _upper_case_first_letter(wid_hei)
       var body = els.body || els[0].body;
       var html = els.documentElement || els[0].documentElement;
-      return w_h == "width" ? Math.max( body.offsetWidth, body.scrollWidth, html.offsetWidth, html.offsetWidth, html.clientWidth )
+      return wid_hei == "width" ? Math.max( body.offsetWidth, body.scrollWidth, html.offsetWidth, html.offsetWidth, html.clientWidth )
         : Math.max( body.offsetHeight, body.scrollHeight, html.offsetHeight, html.offsetHeight, html.clientHeight )
     }
 
@@ -505,9 +432,7 @@
 
         return res;
       }
-    };
-
-    // width_type 1: outer, 2: innerWidth, 3: width
+    }
 
     return function f(els, value) {
       if (!(_is_el_or_els(els) || _is_win_el_or_els(els) || _check_doc(els))) return _(f, _, els);
@@ -515,7 +440,8 @@
       var get_wid_hei = get_wid_hei_val(true, wid_hei_type, wid_hei, value);
 
       if (arguments.length == 1 || value == true) {
-        if(_is_win_el_or_els(els)) return _key_val_arr_like(els, window_width_type);
+        if(_is_win_el_or_els(els))
+          return _is_anf(els) ? els.map(function(v) { return v[window_width_type] }) : els[window_width_type];
         if (_check_doc(els)) return _get_doc_wid_hei(els, wid_hei);
         return _is_anf(els) ? els.map(get_wid_hei) : get_wid_hei(els);
       }
@@ -535,8 +461,7 @@
 
       return _is_anf(els) ? _each(els, set_width) : set_width(els), els;
     }
-
-  };
+  }
 
 
   $.width = wid_hei_fn(3, "width", "innerWidth");
@@ -559,51 +484,43 @@
     }
 
     return _is_anf(els) ? _map(els, offsetParent_iter) : offsetParent_iter(els);
-  }
-
-  function is_node_name(el, name) {
-    return el && el.nodeName && el.nodeName.toLowerCase() === name.toLowerCase();
-  }
+  };
 
   $.position = function f(els) {
-
     function position_iter(el) {
       var offsetParent, offset, parentOffset = { top: 0, left: 0 };
 
       if ($.css( el, "position" ) === "fixed") {
-
         offset = el.getBoundingClientRect();
-
       } else {
         offsetParent = $.offsetParent(el);
         offset = $.offset(el);
-        if (!is_node_name(offsetParent, "html")) {
+
+        if (!_is_node_name(offsetParent, "html")) {
           parentOffset = $.offset(offsetParent);
         }
         parentOffset = {
           top: parentOffset.top + offsetParent.clientTop,
           left: parentOffset.left + offsetParent.clientLeft
         };
-
       }
+
       return {
         top: offset.top - parentOffset.top - parseFloat($.css(el, "marginTop")) + documentElement.clientTop,
         left: offset.left - parentOffset.left - parseFloat($.css(el, "marginLeft")) + documentElement.clientLeft
       };
     }
 
-    return _is_anf(els) ? _map(els, position_iter) : position_iter(els)
+    return _is_anf(els) ? _map(els, position_iter) : position_iter(els);
   };
 
   $.offset = function f(els, options) {
-
     // options : function or coordinates
     if (!_is_el_or_els(els)) return _(f, _, els);
 
     //setoffset
     if (options) {
-
-      function offset_iter_set (el, i) {
+      function offset_iter_set(el, i) {
         if (_is_fn(options)) return f(el, options(i, offset_iter_get(el), el));
 
         var curPosition, curLeft, curCSSTop, curTop, curOffset, curCSSLeft, calculatePosition,
@@ -623,7 +540,6 @@
           curPosition = $.position(el);
           curTop = curPosition.top;
           curLeft = curPosition.left;
-
         } else {
           curTop = parseFloat(curCSSTop) || 0;
           curLeft = parseFloat(curCSSLeft) || 0;
@@ -638,15 +554,16 @@
 
         return $.css(el, props), el;
       }
-      return _is_anf(els) ? _map(els, offset_iter_set) : offset_iter_set(els)
+
+      return _is_anf(els) ? _map(els, offset_iter_set) : offset_iter_set(els);
     }
 
-    function offset_iter_get (el) {
+    function offset_iter_get(el) {
       var rect = el.getBoundingClientRect();
       if (rect.width || rect.height) {
-        var doc = el.ownerDocument;
-        var win = _get_win(doc);
-        var docElem = doc.documentElement;
+        var doc = el.ownerDocument,
+          win = _get_win(doc),
+          docElem = doc.documentElement;
 
         return {
           top: rect.top + win.pageYOffset - docElem.clientTop,
@@ -657,38 +574,22 @@
     }
 
     return _is_anf(els) ? _map(els, offset_iter_get) : offset_iter_get(els)
-
   };
 
-  function parse_int_only_numeric(n) {
-    return _is_numeric(n) ? parseFloat(n) : n;
-  }
-  function push_map (list, iter) {
-    var res = [];
-    var val;
-    for (var i=0; i < list.length; i++) {
-      if (val = iter(list[i], i, list)) res.push(val)
-    }
-    return res;
-  }
-
-  function _contains (list, value) {
-    return _find(list, function(val) {return val == value}) ? true : false
-  }
 
   $.val = function f(els, value) {
     if (!_is_el_or_els(els)) return _(f, _, els);
 
     if (arguments.length == 1) {
       function get_iter(el) {
-        if (is_node_name(el, "select")) {
+        if (_is_node_name(el, "select")) {
 
           function select_iter(el) { return el.selected && el.value }
-          return push_map(el.options, select_iter);
+          return _push_map(el.options, select_iter);
 
         } else if (el.type == "radio" || el.type == "number") {
 
-          return parse_int_only_numeric(el.value);
+          return _parse_float_only_numeric(el.value);
 
         } else {
           var ret = el.value;
@@ -714,31 +615,47 @@
       }
 
       if ((el.type == "radio" || el.type == "checkbox") && Array.isArray(value)) {
-        el.checked = _is_str(_find(value, function(val) {return val == el.value}))
-        return;
-      } else if (is_node_name(el, "select")) {
+        return el.checked = _is_str(_find(value, function(val) { return val == el.value }));
+      } else if (_is_node_name(el, "select")) {
         if (Array.isArray(value)) {
-
           var list = value;
-          _each(el.options, function(option) {
-            option.selected = _contains(list, option.value);
-          });
-          return;
+          return _each(el.options, function(option) { option.selected = _contains(list, option.value) });
         } else {
-          _each(el.options, function(option) {
-            option.selected = option.value == value ? true : false;
-          });
-          return;
+          return _each(el.options, function(option) { option.selected = option.value == value });
         }
       }
       el.value = val;
     }
 
-    return _is_anf(els) ? _each(els, set_iter) : set_iter(els, 0), els
-  }
+    return _is_anf(els) ? _each(els, set_iter) : set_iter(els, 0), els;
+  };
 
+  $.el = function f(html) {
+    if (/^<.*>.*/.test(html)) {
+      var div = document.createElement('div');
+      div.innerHTML = html;
+      return _map(div.children, _idtt);
+    } else {
+      return document.createElement(html);
+    }
+  };
 
+  $.frag = function f(html) {
+    var doc_frag = document.createDocumentFragment();
+    if (/^<.*>.*/.test(html)) {
+      var div = document.createElement('div');
+      div.innerHTML = html;
+      var len = div.children.length;
+      for (var i = 0; i < len; i++) {
+        doc_frag.appendChild(div.children[0]);
+      }
+    } else {
+      var some = document.createElement(html);
+      doc_frag.appendChild(some);
+    }
 
+    return doc_frag;
+  };
 
   function _scroll_fn (el, val, prop, method) {
     var top = prop == "pageYOffset" ? true : false;
@@ -752,44 +669,17 @@
     } else {
       el[method] = val;
     }
-    return el
+    return el;
   }
-
-  $.el = function f(html) {
-    if (/^</.test(html)) {
-      var div = document.createElement('div');
-      div.innerHTML = html;
-      return div.children;
-    } else {
-      return document.createElement(html);
-    }
-  };
-
-  $.frag = function f(html) {
-    var docFrag = document.createDocumentFragment();
-    if (/^</.test(html)) {
-      var div = document.createElement('div');
-      div.innerHTML= html;
-      var len = div.children.length
-      for (var i=0; i<len; i++) {
-        docFrag.appendChild(div.children[0]);
-      }
-    } else {
-      var some = document.createElement(html);
-      docFrag.append(some);
-    }
-
-    return docFrag;
-  };
 
   $.scrollTop = function f(el, val) {
     if(!(_is_el(el) || _is_win(el) || _is_document(el))) return _(f, _, el);
     return _scroll_fn(el, val, "pageYOffset", "scrollTop");
-  }
+  };
 
   $.scrollLeft = function f(el, val) {
     if(!(_is_el(el) || _is_win(el) || _is_document(el))) return _(f, _, el);
     return _scroll_fn(el, val, "pageXOffset", "scrollLeft");
-  }
+  };
 
 }(D);

@@ -58,7 +58,7 @@
             td {{d2}}
           `),`)}}`),
         `)}}
-      `), $);
+      `), D.el, _.first); // D.find가 els를 지원하면 _.first를 없애도됨
 
     var make_user_board = __(
       _.shuffle, make_bingo,
@@ -73,7 +73,7 @@
     var make_admin_board = __(
       make_bingo, make_bingo_table,
       keep_data(admin_data),
-      _('on', 'click', 'td', function() {
+      D.on('click', 'td', function() {
         D.addClass(this, 'checked');
         var targetText = this.innerText,
             idx = find_idx(targetText);
