@@ -17,7 +17,7 @@
 
     var keep_data = data =>
       _.tap($,
-        _($.find, _, 'td'),
+        $.find('td'),
         _.reduce((l, d, i) => {
           var idx = i % 5;
           return l[idx] ? l[idx].push(d) : l[idx] = [d], l;
@@ -81,7 +81,7 @@
           _.each(data[idx], (td, i, col_tds) => {
             if (td.innerText == targetText) {
               var $td = $(td),
-                  $row_tds = $.find($.closest($td, 'tr'), 'td');
+                  $row_tds = _.go($td, $.closest('tr'), $.find('td'));
               $.addClass($td, 'checked');
 
               if (_.every($row_tds, isChecked)) {
@@ -139,7 +139,7 @@
         $('.admin_board td'),
         _.reject(isChecked),
         _.shuffle, _.first,
-        _($.trigger, _, 'click'));
+        $.trigger('click'));
     })
   );
 

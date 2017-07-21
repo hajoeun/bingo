@@ -13,44 +13,40 @@
    * has 필정님 v
    * is v
    * next v 병진님
-   * nextAll 병진님
-   * nextUntil 병진님
+   * nextAll v 병진님
+   * nextUntil v 병진님
    * parent 필정님 v
    * parents 필정님 v
    * parentsUntil 필정님 v
    * 밑에는 같이---------
-   * prev
-   * prevAll
-   * prevUntil
-   * siblings 나중에 nextAll + prevAll
-   * not - 어려울것같음 제일나중
+   * prev v
+   * prevAll v
+   * prevUntil v
+   * siblings v
+   * not - 어려울것같음 제일나중 v
    * */
   !function() {
     var rquick_expr = /^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/
       , combinator_expr = /^\s*[>|+|~]\s*/
       , combinator_expr2 = /[>|+|~]/
+      , combinator_expr3 = /^\s*[+|~]\s*/
       , doc = window.document
       , doc_el = doc.documentElement
       , slice = Array.prototype.slice
       , push = Array.prototype.push
       , don_uid = function (id) {
-      return function() {
-        return 'don_js_' + '_' + id++ + '_' + Date.now();
-      };
-    }(0)
+        return function() {
+          return 'don_js_' + '_' + id++ + '_' + Date.now();
+        };
+      }(0)
       , match_func = function(matches) {
-      return function(el, selector) {
-        return !!el.matches && matches.call(el, selector);
+        return function(el, selector) {
+          return !!el.matches && matches.call(el, selector);
+        }
+      }(doc_el.matches || doc_el.webkitMatchesSelector || doc_el.mozMatchesSelector || doc_el.msMatchesSelector),
+      not_match_func = function(el, selector) {
+        return !match_func(el, selector);
       };
-    }(doc_el.matches || doc_el.webkitMatchesSelector || doc_el.mozMatchesSelector || doc_el.msMatchesSelector);
-
-
-    function push_apply(_larr, results) {
-      var results = results || [];
-      if (typeof _larr == 'string' || !likearr(_larr)) _larr = [_larr];
-      push.apply(results, _larr);
-      return results;
-    }
     var ___ = {};
     if (!Element.prototype.closest) Element.prototype.closest = function (selector) {
       var el = this;
@@ -59,7 +55,6 @@
         el = el.parentElement;
       }
     };
-
     function _(func) {
       var parts1 = [], parts2 = [],
         parts = slice.call(arguments, 1),
@@ -80,11 +75,15 @@
         return func.apply(null, args1.concat(rest.concat(args2)));
       }
     }
-
+    function push_apply(_larr, results) {
+      var results = results || [];
+      if (typeof _larr == 'string' || !likearr(_larr)) _larr = [_larr];
+      push.apply(results, _larr);
+      return results;
+    }
     function is_node(node, nt) {
       return node && typeof node == 'object' &&  (nt = node.nodeType) && (nt == 1 || nt == 9);
     }
-
     function define_root(root) {
       if (!root) return doc;
       var is_string = typeof root == 'string';
@@ -92,7 +91,6 @@
       if (is_string) return $(root)[0];
       return root;
     }
-
     function is_descendant(a, b) {
       var adown = a.nodeType === 9 ? doc_el : a,
         bup = b && b.parentNode;
@@ -100,27 +98,6 @@
           adown.contains ? adown.contains( bup )
             : (a.compareDocumentPosition && a.compareDocumentPosition( bup ) & 16)));
     }
-
-    $.contents = function(els) {
-      if (!likearr(els)) els = [els];
-      for (var i=0,results=[],len=els.length,child_nodes,_el;i<len;i++) {
-        if ((_el = els[i]) && (child_nodes = _el.childNodes))
-          for (var j=0,len2=child_nodes.length,el;j<len2;j++)
-            if ((el = child_nodes[j]) && results.indexOf(el) == -1) results.push(el);
-      }
-      return results;
-    };
-
-    $.has = function(els, selector) {
-      if (!likearr(els)) els = [els];
-      var finders = $.find(els, selector), finders_len = finders.length;
-      for (var i=0, results = [], len=els.length,el;i<len;i++)
-        if ((el = els[i]))
-          for (var j=0;j<finders_len;j++)
-            if (is_descendant(el, finders[j]) && results.indexOf(el) == -1) results.push(el);
-      return results;
-    };
-
     function make_predi(selector) {
       return selector ? function(results, el, selector) {
         return el && match_func(el, selector) && results.indexOf(el) == -1;
@@ -128,49 +105,6 @@
         return el && results.indexOf(el) == -1;
       };
     }
-
-    $.parent = function(els, selector) {
-      if (!likearr(els)) els = [els];
-      var predi = make_predi(selector);
-      for (var i=0,results=[],len=els.length,el,_el;i<len;i++)
-        if ((_el = els[i]) && predi(results, (el=_el.parentElement), selector)) results.push(el);
-      return results;
-    };
-
-    $.parents = function(els, selector) {
-      if (!likearr(els)) els = [els];
-      var results = [], el, find_parent = selector ? function(els, selector) {
-        return $.closest($.parent(els), selector);
-      } : function(els) {
-        return $.parent(els);
-      };
-      do {
-        els = find_parent(els, selector);
-        for(var i=0,len=els.length;i<len;i++)
-          if ((el = els[i]) && results.indexOf(el) == -1) results.push(el);
-      } while(len);
-      return results;
-    };
-
-    $.parentsUntil = function(els, selector) {
-      if (!likearr(els)) els = [els];
-      var results = [], el, parents = [];
-      if (!selector) return $.parents(els);
-      do {
-        els = $.parent(els);
-        for(var i=0, len=els.length;i<len;i++)
-          if ((el = els[i]) && !match_func(el, selector) && results.indexOf(el) == -1) {
-            results.push(el);
-            parents.push(el);
-          }
-        els = parents;
-        parents = [];
-      } while(len);
-      return results;
-    };
-
-    $.contains = is_descendant;
-
     function make_string_selector(selector, root, selector_is_string) {
       if (root.nodeType && root.nodeType != 9) {
         var is_root_id = !!root.id;
@@ -186,29 +120,37 @@
       }
       return _$(selector, root, selector_is_string);
     }
-
-    $.find = function find_recursive(parent_els, selector) {
-      var root, p_els_len = getLength(parent_els)
-        , selector_is_string = typeof selector == 'string'
-        , selector_func = !selector_is_string || !combinator_expr2.test(selector)
-        ? _$ : make_string_selector;
-      if (typeof parent_els == 'string') {
-        return selector_is_string ?
-          _$(parent_els + ' ' + selector, doc, selector_is_string)
-          : find_recursive(_$(parent_els, doc, selector_is_string), selector);
-      } else if (selector_is_string && (!likearr(parent_els) || p_els_len <= 1)) {
-        return selector_func(selector, define_root(parent_els), selector_is_string);
-      } else {
-        for(var i=0,results = [],els;i<p_els_len;i++) {
-          root = define_root(parent_els[i]),
-            els = selector_func(selector, root, selector_is_string);
-          for(var j=0,els_len = els.length,el;j<els_len;j++)
-            if ((el = els[j]) && results.indexOf(el) == -1 && is_descendant(root, el)) results.push(el);
-        }
-        return results;
-      }
+    var filter_or_not = function f(els, selector, func) {
+      if (typeof els == 'string') return _(f, _, els, func);
+      if (!likearr(els)) els = [els];
+      for (var i=0, results=[], len=els.length, el; i<len;i++)
+        if ((el = els[i]) && func(el, selector)) results.push(el);
+      return results;
     };
-
+    var prev_or_next = function(els, selector, p_or_n) {
+      if (!likearr(els)) els = [els];
+      var predi = make_predi(selector);
+      for (var i=0, results = [], len=els.length, _el, el; i<len;i++)
+        if ((_el = els[i]) && predi(results, (el=_el[p_or_n]), selector)) results.push(el);
+      return results;
+    };
+    var until = function(els, selector, funcA, funcB) {
+      if (!likearr(els)) els = [els];
+      if (!selector) return funcA(els);
+      var results = [], el, parents = [];
+      do {
+        els = funcB(els);
+        for(var i=0, len=els.length;i<len;i++)
+          if ((el = els[i]) && not_match_func(el, selector) && results.indexOf(el) == -1) {
+            results.push(el);
+            parents.push(el);
+          }
+        els = parents;
+        parents = [];
+      } while(len);
+      return results;
+    };
+    // traversing!!!!!!!
     $.children = function(els, selector) {
       if (!likearr(els)) els = [els];
       for (var i=0,results=[],len=els.length,children,_el;i<len;i++)
@@ -217,54 +159,153 @@
             if ((el = children[j]) && results.indexOf(el) == -1) results.push(el);
       return selector ? $.filter(results, selector) : results;
     };
-
-    // $.children2 = function(els, selector) {
-    //   if (!likearr(els)) els = [els];
-    //   var results = [], predi = make_predi(selector);
-    //   for (var i = 0, len = els.length, _el, children; i < len; i++)
-    //     if ((_el = els[i]) && (children = _el.children))
-    //       for (var j = 0, len2 = children.length, el; j < len2; j++)
-    //         if (predi(results, (el = children[j]), selector)) results.push(el);
-    //   return results;
-    // };
-
-    $.eq = function(els, idx) {
-      if (!likearr(els)) els = [els];
-      return els[idx];
+    $.children_with = function(selector) {
+      return _($.children, _, selector);
     };
-
-    $.next = function(els, selector) {
-      if (!likearr(els)) els = [els];
-      var predi = make_predi(selector);
-      for (var i=0, results = [], len=els.length, _el, el; i<len;i++)
-        if ((_el = els[i]) && predi(results, (el=_el.nextElementSibling), selector)) results.push(el);
-      return results;
-    };
-
-    $.nextAll = function(els, selector) {
-      return $.find(els, '~' + (selector || '*'));
-    };
-
-    $.is = function(els, selector) {
-      if (arguments.length == 1) return _(f, _, els);
-      if (!likearr(els)) els = [els];
-      for (var i=0, len=els.length, el; i<len;i++)
-        if ((el = els[i]) && match_func(el, selector)) return true;
-      return false;
-    };
-
-    $.closest = function(els, selector) {
+    $.closest = function f(els, selector) {
+      if (arguments.length == 1 && typeof els == 'string') return _(f, _, els);
       if (!likearr(els)) els = [els];
       for (var i=0, results=[], len=els.length, _el, el; i < len;i++)
         if ((_el = els[i]) && (el = _el.closest(selector)) && results.indexOf(el) == -1) results.push(el);
       return results;
     };
-
-    $.filter = function(els, selector) {
+    $.contains = is_descendant;
+    $.contents = function(els) {
       if (!likearr(els)) els = [els];
-      for (var i=0, results=[], len=els.length, el; i<len;i++)
-        if ((el = els[i]) && match_func(el, selector)) results.push(el);
+      for (var i=0,results=[],len=els.length,child_nodes,_el;i<len;i++) {
+        if ((_el = els[i]) && (child_nodes = _el.childNodes))
+          for (var j=0,len2=child_nodes.length,el;j<len2;j++)
+            if ((el = child_nodes[j]) && results.indexOf(el) == -1) results.push(el);
+      }
       return results;
+    };
+    $.eq = function f(els, idx) {
+      if (arguments.length == 1 && typeof els == 'number') return _(f, _, els);
+      if (!likearr(els)) els = [els];
+      return els[idx] || null;
+    };
+    $.filter = _(filter_or_not, _, _ , match_func);
+    $.find = function f(parent_els, selector) {
+      var parent_els_is_string = typeof parent_els == 'string';
+      if (arguments.length == 1 && parent_els_is_string) return _(f, _, parent_els);
+      if (parent_els_is_string) return [];
+      var root, p_els_len = getLength(parent_els)
+        , selector_is_string = typeof selector == 'string'
+        , selector_func = !selector_is_string || !combinator_expr2.test(selector)
+        ? _$ : make_string_selector;
+      if (selector_is_string && (!likearr(parent_els) || p_els_len <= 1)) {
+        return selector_func(selector, define_root(parent_els), selector_is_string);
+      } else {
+        var is_combinator_expr3 = selector_is_string && combinator_expr3.test(selector);
+        for(var i=0,results = [],els;i<p_els_len;i++) {
+          root = define_root(parent_els[i]),
+            els = selector_func(selector, root, selector_is_string);
+          for(var j=0,els_len = els.length,el;j<els_len;j++)
+            if ((el = els[j]) && results.indexOf(el) == -1 && (is_combinator_expr3 || is_descendant(root, el))) results.push(el);
+        }
+        return results;
+      }
+      // if (typeof parent_els == 'string') {
+      //   return selector_is_string ?
+      //     _$(parent_els + ' ' + selector, doc, selector_is_string)
+      //     : f(_$(parent_els, doc, selector_is_string), selector);
+      // } else
+    };
+    $.has = function f(els, selector) {
+      if (arguments.length == 1 && typeof els == 'string') return _(f, _, els);
+      if (!likearr(els)) els = [els];
+      var finders = $.find(els, selector), finders_len = finders.length;
+      for (var i=0, results = [], len=els.length,el;i<len;i++)
+        if ((el = els[i]))
+          for (var j=0;j<finders_len;j++)
+            if (is_descendant(el, finders[j]) && results.indexOf(el) == -1) results.push(el);
+      return results;
+    };
+    $.is = function f(els, selector) {
+      if (arguments.length == 1 && typeof els == 'string') return _(f, _, els);
+      if (!likearr(els)) els = [els];
+      for (var i=0, len=els.length, el; i<len;i++)
+        if ((el = els[i]) && match_func(el, selector)) return true;
+      return false;
+    };
+    $.next = _(prev_or_next, _, _, 'nextElementSibling');
+    $.next_with = function(selector) {
+      return _($.next, _, selector);
+    };
+    $.next_all = $.nextAll = function(els, selector) {
+      return $.find(els, '~' + (selector || '*'));
+    };
+    $.next_all_with = function(selector) {
+      return _($.next_all, _, selector);
+    };
+    $.next_until = $.nextUntil = _(until, _, _, $.nextAll, $.next);
+    $.next_until_with = function(selector) {
+      return _($.next_until, _, selector);
+    };
+    $.not = _(filter_or_not, _, _ , not_match_func);
+    $.parent = function(els, selector) {
+      if (!likearr(els)) els = [els];
+      var predi = make_predi(selector);
+      for (var i=0,results=[],len=els.length,el,_el;i<len;i++)
+        if ((_el = els[i]) && predi(results, (el=_el.parentElement), selector)) results.push(el);
+      return results;
+    };
+    $.parent_with = function(selector) {
+      return _($.parent, _, selector);
+    };
+    $.parents = function(els, selector) {
+      if (!likearr(els)) els = [els];
+      var results = [], el, find_parent = selector ? function(els, selector) {
+        return $.closest($.parent(els), selector);
+      } : function(els) {
+        return $.parent(els);
+      };
+      do {
+        els = find_parent(els, selector);
+        for(var i=0,len=els.length;i<len;i++)
+          if ((el = els[i]) && results.indexOf(el) == -1) results.push(el);
+      } while(len);
+      return results;
+    };
+    $.parents_with = function(selector) {
+      return _($.parents, _, selector);
+    };
+    $.parents_until = $.parentsUntil = _(until, _, _, $.parents, $.parent);
+    $.parents_until_with = function(selector) {
+      return _($.parents_until, _, selector);
+    };
+    $.prev = _(prev_or_next, _, _, 'previousElementSibling');
+    $.prev_with = function(selector) {
+      return _($.prev, _, selector);
+    };
+    $.prev_all = $.prevAll = function(els, selector) {
+      if (!likearr(els)) els = [els];
+      var results = [], el;
+      do {
+        els = $.prev(els, selector);
+        for(var i=0,len=els.length;i<len;i++)
+          if ((el = els[i]) && results.indexOf(el) == -1) results.push(el);
+      } while(len);
+      return results;
+    };
+    $.prev_all_with = function(selector) {
+      return _($.prev_all, _, selector);
+    };
+    $.prev_until = $.prevUntil = _(until, _, _, $.prevAll, $.prev);
+    $.prev_until_with = function(selector) {
+      return _($.prev_until, _, selector);
+    };
+    $.siblings = function(els, selector) {
+      if (!likearr(els)) els = [els];
+      var predi = make_predi(selector);
+      for(var i=0,results = [],len=els.length, _el, parent;i<len;i++)
+        if ((_el = els[i]) && (parent = _el.parentNode))
+          for(var j=0, children=parent.children, len2 = children.length, el; j<len2;j++)
+            if (predi(results, (el = children[j]), selector) && el != _el) results.push(el);
+      return results;
+    };
+    $.siblings_with = function(selector) {
+      return _($.siblings, _, selector);
     };
 
     function _$(selector, root, _selector_is_string) {
@@ -1275,6 +1316,8 @@
     };
 
     D.trigger = function trigger(el, eventType, props) {
+      if (arguments.length == 1) return _(trigger, _, el);
+
       if (likearr(el) && !is_node(el) && el != el.window) return _each(el, function(el) {
         D.triggerHandler(el, makeEvent(eventType, props));
       });
