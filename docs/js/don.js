@@ -113,8 +113,8 @@
 
     $.has = function(els, selector) {
       if (!likearr(els)) els = [els];
-      var results = [], finders = $.find(els, selector), finders_len = finders.length;
-      for (var i=0,len=els.length,el;i<len;i++)
+      var finders = $.find(els, selector), finders_len = finders.length;
+      for (var i=0, results = [], len=els.length,el;i<len;i++)
         if ((el = els[i]))
           for (var j=0;j<finders_len;j++)
             if (is_descendant(el, finders[j]) && results.indexOf(el) == -1) results.push(el);
@@ -131,8 +131,8 @@
 
     $.parent = function(els, selector) {
       if (!likearr(els)) els = [els];
-      var results = [], predi = make_predi(selector);
-      for (var i=0,len=els.length,el,_el;i<len;i++)
+      var predi = make_predi(selector);
+      for (var i=0,results=[],len=els.length,el,_el;i<len;i++)
         if ((_el = els[i]) && predi(results, (el=_el.parentElement), selector)) results.push(el);
       return results;
     };
@@ -188,7 +188,7 @@
     }
 
     $.find = function find_recursive(parent_els, selector) {
-      var root, results = [], p_els_len = getLength(parent_els)
+      var root, p_els_len = getLength(parent_els)
         , selector_is_string = typeof selector == 'string'
         , selector_func = !selector_is_string || !combinator_expr2.test(selector)
         ? _$ : make_string_selector;
@@ -199,20 +199,19 @@
       } else if (selector_is_string && (!likearr(parent_els) || p_els_len <= 1)) {
         return selector_func(selector, define_root(parent_els), selector_is_string);
       } else {
-        for(var i=0, els;i<p_els_len;i++) {
+        for(var i=0,results = [],els;i<p_els_len;i++) {
           root = define_root(parent_els[i]),
             els = selector_func(selector, root, selector_is_string);
           for(var j=0,els_len = els.length,el;j<els_len;j++)
             if ((el = els[j]) && results.indexOf(el) == -1 && is_descendant(root, el)) results.push(el);
         }
+        return results;
       }
-      return results;
     };
 
     $.children = function(els, selector) {
       if (!likearr(els)) els = [els];
-      var results = [];
-      for (var i = 0, len = els.length, children, _el; i < len; i++)
+      for (var i=0,results=[],len=els.length,children,_el;i<len;i++)
         if ((_el = els[i]) && (children = els[i].children))
           for (var j= 0, len2 = children.length, el; j < len2; j++)
             if ((el = children[j]) && results.indexOf(el) == -1) results.push(el);
@@ -236,8 +235,8 @@
 
     $.next = function(els, selector) {
       if (!likearr(els)) els = [els];
-      var results = [], predi = make_predi(selector);
-      for (var i=0, len=els.length, _el, el; i<len;i++)
+      var predi = make_predi(selector);
+      for (var i=0, results = [], len=els.length, _el, el; i<len;i++)
         if ((_el = els[i]) && predi(results, (el=_el.nextElementSibling), selector)) results.push(el);
       return results;
     };
@@ -256,15 +255,14 @@
 
     $.closest = function(els, selector) {
       if (!likearr(els)) els = [els];
-      for (var i=0, results = [], len=els.length, _el, el; i < len;i++)
+      for (var i=0, results=[], len=els.length, _el, el; i < len;i++)
         if ((_el = els[i]) && (el = _el.closest(selector)) && results.indexOf(el) == -1) results.push(el);
       return results;
     };
 
     $.filter = function(els, selector) {
       if (!likearr(els)) els = [els];
-      var results = [];
-      for (var i=0, len=els.length, el; i<len;i++)
+      for (var i=0, results=[], len=els.length, el; i<len;i++)
         if ((el = els[i]) && match_func(el, selector)) results.push(el);
       return results;
     };
@@ -554,7 +552,7 @@
       return els;
     };
 
-    function make_set_iter(maybe_fn, prop) {
+    function _make_set_iter(maybe_fn, prop) {
       return function(el, i) {
         var val = _is_fn(maybe_fn) ? maybe_fn(i, el[prop]) : maybe_fn;
         if (val) el[prop] = val;
@@ -566,7 +564,7 @@
       if (text == undefined)
         return _is_anf(els) ? _map(els, function(el) { return el.textContent; }) : els.textContent;
 
-      var iter = make_set_iter(text, 'textContent');
+      var iter = _make_set_iter(text, 'textContent');
       _is_anf(els) ? _each(els, iter) : iter(els, 0);
       return els;
     };
@@ -580,7 +578,7 @@
       if (html == undefined)
         return _is_anf(els) ? els[0].innerHTML : els.innerHTML;
 
-      var iter = make_set_iter(html, 'innerHTML');
+      var iter = _make_set_iter(html, 'innerHTML');
       _is_anf(els) ? _each(els, iter) : iter(els, 0);
       return els;
     };
@@ -715,15 +713,18 @@
     $.toggle = function(els, state) {
       if (typeof state === "boolean") { return $[state ? 'show' : 'hide'](els); }
       var fn = function(el) { $[is_hidden_within_tree(el) ? 'show' : 'hide'](el); };
-      return _is_anf(els) ? _each(els, fn) : fn(els);
+      return _is_anf(els) ? _each(els, fn) : fn(els), els;
     };
 
     $.clone = function(els) {
       var clone_node = function(el) { return el.cloneNode(true); };
-      return _is_anf(els) ? _map(els, clone_node) : clone_node(els)
+      return _is_anf(els) ? _map(els, clone_node) : clone_node(els);
     };
 
-    $.empty = function() {};
+    $.empty = function(els) {
+      var fn = function(el) { el.innerHTML = '' };
+      return _is_anf(els) ? _each(els, fn) : fn(els), els;
+    };
 
 
     function wid_hei_fn(wid_hei_type, wid_hei, window_width_type) {
@@ -978,7 +979,7 @@
         div.innerHTML = html;
         return _map(div.children, _idtt);
       } else {
-        return document.createElement(html);
+        return [document.createElement(html)];
       }
     };
 
@@ -1127,7 +1128,7 @@
     }
 
     function removeEvent(el, event, selector, callback) {
-      if (likearr(el) && !is_node(el)) return _each(el, function(el) {
+      if (likearr(el) && !is_node(el) && el != el.window) return _each(el, function(el) {
         removeEvent(el, event, selector, callback);
       });
 
@@ -1157,8 +1158,7 @@
 
     function bindEvent(el, selector, event, callback, delegator, once) {
       if (!el) return el;
-
-      if (likearr(el) && !is_node(el)) return _each(el, function(el) {
+      if (likearr(el) && !is_node(el) && el != el.window) return _each(el, function(el) {
         bindEvent(el, selector, event, callback, delegator, once);
       });
 
@@ -1275,7 +1275,7 @@
     };
 
     D.trigger = function trigger(el, eventType, props) {
-      if (likearr(el) && !is_node(el)) return _each(el, function(el) {
+      if (likearr(el) && !is_node(el) && el != el.window) return _each(el, function(el) {
         D.triggerHandler(el, makeEvent(eventType, props));
       });
       D.triggerHandler(el, makeEvent(eventType, props));

@@ -1,16 +1,15 @@
 !function($) {
-
   var u_num = 2,
       b_num = 2,
       isChecked = e => e.classList.contains('checked');
 
-  D.on(D('button#start'), 'click', function() {
-    b_num = D.val(D('input[name="b_num"]'));
-    u_num = D.val(D('input[name="u_num"]'));
+  $.on($('button#start'), 'click', function() {
+    b_num = $.val($('input[name="b_num"]'));
+    u_num = $.val($('input[name="u_num"]'));
     game_start(u_num, b_num);
-    D.text(D('#goal'), b_num);
-    D.hide(D('.before_start'));
-    D.show(D('.after_start'));
+    $.text($('#goal'), b_num);
+    $.hide($('.before_start'));
+    $.show($('.after_start'));
   });
 
   function game_start(u_num, b_num) {
@@ -18,7 +17,7 @@
 
     var keep_data = data =>
       _.tap($,
-        _('find', 'td'),
+        _($.find, _, 'td'),
         _.reduce((l, d, i) => {
           var idx = i % 5;
           return l[idx] ? l[idx].push(d) : l[idx] = [d], l;
@@ -58,23 +57,23 @@
             td {{d2}}
           `),`)}}`),
         `)}}
-      `), D.el, _.first); // D.find가 els를 지원하면 _.first를 없애도됨
+      `), $.el);
 
     var make_user_board = __(
       _.shuffle, make_bingo,
       cut, make_bingo_table,
       keep_data(user_datas),
-      D.appendTo(D('.user_board')));
+      $.appendTo($('.user_board')));
 
-    var addLine = __(D, D.addClass('line')),
+    var addLine = __($, $.addClass('line')),
         xLine1 = (c, i) => c[i],
         xLine2 = (c, i, l) => c[l.length-1-i];
 
     var make_admin_board = __(
       make_bingo, make_bingo_table,
       keep_data(admin_data),
-      D.on('click', 'td', function() {
-        D.addClass(this, 'checked');
+      $.on('click', 'td', function() {
+        $.addClass(this, 'checked');
         var targetText = this.innerText,
             idx = find_idx(targetText);
 
@@ -82,9 +81,8 @@
           _.each(data[idx], (td, i, col_tds) => {
             if (td.innerText == targetText) {
               var $td = $(td),
-                  $row_tds = $td.closest('tr').find('td');
-
-              D.addClass($td, 'checked');
+                  $row_tds = $.find($.closest($td, 'tr'), 'td');
+              $.addClass($td, 'checked');
 
               if (_.every($row_tds, isChecked)) {
                 _.each($row_tds, addLine);
@@ -116,11 +114,11 @@
           }
         })
       }),
-      D.appendTo(D('.admin_board')));
+      $.appendTo($('.admin_board')));
 
 
-    $('button#reset').on('click', function() {
-      D.removeClass(D('td.checked'), 'checked line');
+    $.on($('button#reset'), 'click', function() {
+      $.removeClass($('td.checked'), 'checked line');
       _.each(user_datas, d => {
         d.bingo = false;
         d.line = { x1: false, x2: false, total: 0 };
@@ -135,22 +133,22 @@
         ubs => [make_admin_board].concat(ubs)));
   }
 
-  _.go(D('button#pop'),
-    D.on('click', function() {
+  _.go($('button#pop'),
+    $.on('click', function() {
       _.go(
         $('.admin_board td'),
         _.reject(isChecked),
         _.shuffle, _.first,
-        _('click'));
+        _($.trigger, _, 'click'));
     })
   );
 
-  D.on(D('button#restart'), 'click', function() {
-    D.remove(D('table'));
-    D.off(D('button#reset'), 'click');
-    D.text(D('#goal'), "");
-    D.show(D('.before_start'));
-    D.hide(D('.after_start'));
+  $.on($('button#restart'), 'click', function() {
+    $.remove($('table'));
+    $.off($('button#reset'), 'click');
+    $.text($('#goal'), "");
+    $.show($('.before_start'));
+    $.hide($('.after_start'));
   });
 
-}(jQuery);
+}(D);
