@@ -1,16 +1,41 @@
 !function($) {
-  var u_num = 2,
-      b_num = 2,
-      isChecked = e => e.classList.contains('checked');
+  var data_check, u_num = 2, b_num = 2, isChecked = e => e.classList.contains('checked');
 
-  $.on($('button#start'), 'click', function() {
-    b_num = $.val($('input[name="b_num"]'));
-    u_num = $.val($('input[name="u_num"]'));
-    game_start(u_num, b_num);
-    $.text($('#goal'), b_num);
-    $.hide($('.before_start'));
-    $.show($('.after_start'));
-  });
+  _.go($('body'),
+    $.on('click', 'button#start', function() {
+      b_num = $.val($('input[name="b_num"]'));
+      u_num = $.val($('input[name="u_num"]'));
+      data_check = game_start(u_num, b_num);
+      $.text($('#goal'), b_num);
+      $.hide($('.before_start'));
+      $.show($('.after_start'));
+    }),
+
+    $.on('click', 'button#pop', function() {
+      _.go('.admin_board td',
+        $,
+        _.reject(isChecked),
+        _.shuffle, _.first,
+        $.trigger('click'));
+    }),
+
+    $.on('click', 'button#restart', function() {
+      $.remove($('table'));
+      $.off($('button#reset'), 'click');
+      $.empty($('#goal'));
+      $.toggle($('.input_group div'))
+    }),
+
+    $.on('click', 'button#reset', function() {
+      _.go('td.checked', $,
+        $.remove_class('checked line'),
+        _.c(data_check.user_datas),
+        _.each(d => {
+          d.bingo = false;
+          d.line = { x1: false, x2: false, total: 0 };
+        }));
+    })
+  );
 
   function game_start(u_num, b_num) {
     var admin_data = [], user_datas = [], game_done = false;
@@ -116,39 +141,13 @@
       }),
       $.appendTo($('.admin_board')));
 
-
-    $.on($('button#reset'), 'click', function() {
-      $.removeClass($('td.checked'), 'checked line');
-      _.each(user_datas, d => {
-        d.bingo = false;
-        d.line = { x1: false, x2: false, total: 0 };
-      });
-    });
-
-    _.all(
+  _.all(
       base_arr,
       _.go(
         _.range(u_num),
         _.map(_.c(make_user_board)),
         ubs => [make_admin_board].concat(ubs)));
+
+  return { user_datas: user_datas, admin_data: admin_data };
   }
-
-  _.go($('button#pop'),
-    $.on('click', function() {
-      _.go(
-        $('.admin_board td'),
-        _.reject(isChecked),
-        _.shuffle, _.first,
-        $.trigger('click'));
-    })
-  );
-
-  $.on($('button#restart'), 'click', function() {
-    $.remove($('table'));
-    $.off($('button#reset'), 'click');
-    $.text($('#goal'), "");
-    $.show($('.before_start'));
-    $.hide($('.after_start'));
-  });
-
 }(D);
