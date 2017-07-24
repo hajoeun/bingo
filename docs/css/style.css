@@ -93,7 +93,7 @@ h3 {
   border-bottom: 5px solid #003d00;
 }
 .input_group button#pop:active {
-  border-bottom: 2px solid #165195;
+  border-bottom: 2px solid #082204;
 }
 .input_group button#start {
   background-color: #ff521e;
@@ -101,4 +101,15 @@ h3 {
 }
 .input_group button#start:active {
   border-bottom: 2px solid #c1370e;
+}
+.input_group button#auto {
+  background-color: #165195;
+  border-bottom: 5px solid #09223f;
+}
+.input_group button#auto:active {
+  border-bottom: 2px solid #165195;
+}
+.input_group button#auto:disabled {
+  background-color: rgba(22,78,144,0.42);
+  border-bottom: 2px solid rgba(22,78,144,0.42);
 }

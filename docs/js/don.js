@@ -509,16 +509,17 @@
       return _is_anf(els) ? (_find(els, some_class) !== undefined) : some_class(els);
     };
 
-    $.attr = function f(els, attr_value, attr_value) {
-      if (_is_str(els)) return arguments.length == 1 ? _(f, _, els) : _(f, _, els, attr_value);
+    $.attr = function f(els, attr_name, attr_value) {
+      if (_is_str(els)) return arguments.length == 1 ? _(f, _, els) : _(f, _, els, attr_name);
       if (_is_fn(attr_value)) {
-        var exec_fn = function(el, i) { f(el, attr_value, attr_value(i, el.getAttribute(attr_value), el)) };
+        var exec_fn = function(el, i) { f(el, attr_name, attr_value(i, el.getAttribute(attr_name), el)) };
         return _is_anf(els) ? _each(els, exec_fn) : exec_fn(els), els;
       }
 
       if (arguments.length == 2) {
         var get_iter = function(el) {
-          var value = el.getAttribute(attr_value);
+          var value = el.getAttribute(attr_name);
+          if (value == undefined) return;
           if (_is_numeric(value)) return parseFloat(value);
           if (value == "true") return true;
           if (value == "false") return false;
@@ -530,8 +531,13 @@
 
       if (attr_value == undefined) return els;
 
-      var set_iter = function(el) { el.setAttribute(attr_value, attr_value); };
+      var set_iter = function(el) { el.setAttribute(attr_name, attr_value); };
       return _is_anf(els) ? _each(els, set_iter) : set_iter(els), els;
+    };
+
+    $.remove_attr = $.removeAttr = function(els, attr_name) {
+      var rid_attr = function(el) { el.removeAttribute(attr_name) };
+      return _is_anf(els) ? _each(els, rid_attr) : rid_attr(els), els;
     };
 
     var css_number = {
