@@ -10,7 +10,7 @@
       }, []),
       o => (o.line = { x1: false, x2: false, total: 0 }, o.bingo = false, data.push(o)))
 
-    , cut = _.reduce((l, v, i) => (l[i] = _.first(v, 5), l), [])
+    , reduce_first_5 = _.reduce((l, v, i) => (l[i] = _.first(v, 5), l), [])
     , isChecked = e => e.classList.contains('checked')
     , find_idx = n => {
       var i = 4;
@@ -24,11 +24,12 @@
     , xLine1 = (c, i) => c[i]
     , xLine2 = (c, i, l) => c[l.length-1-i];
 
-  var make_bingo = __(
-    _.reduce((o, n) => {
+
+  var make_bingo = function(arr) {
+    return arr.reduce(function(o, n) {
       var i = find_idx(n);
-      return o[i] = o[i].concat(n), o;
-    }, [[],[],[],[],[]]))
+      return o[i].push(n), o;
+    }, [[],[],[],[],[]])}
 
     , make_bingo_table = __(
       _.unzip,
@@ -48,7 +49,7 @@
 
     , make_user_board = __(
       _.shuffle, make_bingo,
-      cut, make_bingo_table,
+      reduce_first_5, make_bingo_table,
       keep_data(user_datas),
       $.appendTo('.user_board'))
 
