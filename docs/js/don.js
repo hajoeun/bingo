@@ -389,7 +389,7 @@
     function _is_node_name(el, name) { return el && el.nodeName && el.nodeName.toLowerCase() === name.toLowerCase(); }
     function _parse_float_only_numeric(n) { return _is_numeric(n) ? parseFloat(n) : n; }
 
-    var make_class_editor = function f(els, class_name, method) {
+    var class_editor = function f(els, class_name, method) {
       if (!(_is_node(els) || _is_node(els[0]))) return _(f, _, els, method);
 
       function editor(el, i) {
@@ -397,14 +397,14 @@
         if (val)
           if (/\s/.test(val)) _each(val.split(" "), function(v) { el.classList[method](v); });
           else el.classList[method](val);
+        return el;
       }
-      _like_arr(els) ? _each(els, editor) : editor(els, 0);
-      return els;
+      return _like_arr(els) ? _each(els, editor) : editor(els, 0);
     };
 
-    $.add_class = $.addClass = _(make_class_editor, _, _, 'add');
-    $.remove_class = $.removeClass = _(make_class_editor, _, _, 'remove');
-    $.toggle_class = $.toggleClass = _(make_class_editor, _, _, 'toggle');
+    $.add_class = $.addClass = _(class_editor, _, _, 'add');
+    $.remove_class = $.removeClass = _(class_editor, _, _, 'remove');
+    $.toggle_class = $.toggleClass = _(class_editor, _, _, 'toggle');
 
     $.has_class = $.hasClass = function f(els, class_name) {
       if (arguments.length == 1) return _(f, _, els);
@@ -415,8 +415,8 @@
     $.attr = function f(els, attr_name, attr_value) {
       if (_is_str(els)) return arguments.length == 1 ? _(f, _, els) : _(f, _, els, attr_name);
       if (_is_fn(attr_value)) {
-        function exec_fn(el, i) { f(el, attr_name, attr_value(i, el.getAttribute(attr_name), el)) }
-        return _like_arr(els) ? _each(els, exec_fn) : exec_fn(els), els;
+        function exec_fn(el, i) { return f(el, attr_name, attr_value(i, el.getAttribute(attr_name), el)) }
+        return _like_arr(els) ? _each(els, exec_fn) : exec_fn(els);
       }
 
       if (arguments.length == 2) {
@@ -434,13 +434,13 @@
 
       if (attr_value == undefined) return els;
 
-      function set_iter(el) { el.setAttribute(attr_name, attr_value); }
-      return _like_arr(els) ? _each(els, set_iter) : set_iter(els), els;
+      function set_iter(el) { return el.setAttribute(attr_name, attr_value); }
+      return _like_arr(els) ? _each(els, set_iter) : set_iter(els);
     };
 
     $.remove_attr = $.removeAttr = function(els, attr_name) {
-      function rid_attr(el) { el.removeAttribute(attr_name) }
-      return _like_arr(els) ? _each(els, rid_attr) : rid_attr(els), els;
+      function rid_attr(el) { return el.removeAttribute(attr_name) }
+      return _like_arr(els) ? _each(els, rid_attr) : rid_attr(els);
     };
 
     var css_number = {
@@ -484,8 +484,7 @@
           var val = _is_fn(prop_value) ? prop_value(i, el) : prop_value;
           if (val) el.style[prop_name] = check_css_num(val, prop_name);
         };
-      _like_arr(els) ? _each(els, set_iter) : set_iter(els);
-      return els;
+      return _like_arr(els) ? _each(els, set_iter) : set_iter(els), els;
     };
 
     $.remove = function f(els, selector) {
@@ -528,12 +527,11 @@
           before: function(te, i) { return te.parentNode.insertBefore(last == i ? elem : elem.cloneNode(true), te) }
         };
 
-        if (_like_arr(target)) {
+        if (_like_arr(target))
           if (reverse) return _map(target, fns[type]);
-          _each(target, fns[type]);
-        } else {
+          else _each(target, fns[type]);
+        else
           fns[type](target, 0);
-        }
 
         return reverse ? elem : target;
       }
@@ -551,9 +549,8 @@
 
         if (_is_node(elem)) return insert(target, elem);
         if (!reverse && _is_fn(elem)) {
-          var fn = elem, exec_fn = function(el, i) { f(el, fn(i, el.innerHTML)) };
-          _like_arr(target) ? _each(target, exec_fn) : exec_fn(target, 0);
-          return target;
+          var fn = elem, exec_fn = function(el, i) { return f(el, fn(i, el.innerHTML)) };
+          return _like_arr(target) ? _each(target, exec_fn) : exec_fn(target, 0);
         }
         if (elem == undefined) return reverse ? elem : target;
         if (_is_str(elem)) {
@@ -581,21 +578,18 @@
 
     $.append = make_insert('append');
     $.prepend = make_insert('prepend');
-
     $.appendTo = $.append_to = make_insert('append', true);
     $.prependTo = $.prepend_to = make_insert('prepend', true);
 
     $.after = make_insert('after');
     $.before = make_insert('before');
-
     $.insertAfter = $.insert_after = make_insert('after', true);
     $.insertBefore = $.insert_before = make_insert('before', true);
 
     var default_display = {};
 
-    function _get_default_display(el) {
+    function get_default_display(el) {
       var node_name = el.nodeName, display = default_display[node_name];
-
       if (display) return display;
 
       var temp, doc = el.ownerDocument;
@@ -604,16 +598,14 @@
       temp.parentNode.removeChild(temp);
 
       if (display == 'none') display = 'block';
-
       return default_display[node_name] = display;
     }
-
-    function _make_show_hide(show) {
-      var show_hide;
-      if (show) {
-        show_hide = function(el) {
+    function show_or_hide(els, is_show) {
+      var fn;
+      if (is_show) {
+        fn = function(el) {
           if (el.style.display != 'none') {
-            if (el.hidden) el.style.display = _get_default_display(el);
+            if (el.hidden) el.style.display = get_default_display(el);
             return;
           }
 
@@ -621,18 +613,18 @@
           else el.style.display = '';
         };
       } else {
-        show_hide = function(el) {
+        fn = function(el) {
           if (el.style.display == 'none') return;
           if (el.style.display) el._priv_display = el.style.display;
           el.style.display = 'none';
         };
       }
-
-      return function(els) { _like_arr(els) ? _each(els, show_hide) : show_hide(els); return els; };
+      _like_arr(els) ? _each(els, fn) : fn(els);
+      return els;
     }
 
-    $.show = _make_show_hide(true);
-    $.hide = _make_show_hide(false);
+    $.show = _(show_or_hide, _, true);
+    $.hide = _(show_or_hide, _, false);
 
     function is_hidden_within_tree(el) {
       return el.style.display == 'none' ||
