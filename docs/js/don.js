@@ -45,6 +45,7 @@
 
   function _is_str(o) { return typeof o == 'string'; }
 
+
   var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
   function _like_arr(coll) {
     if (coll && coll.nodeType == 1) return false;
@@ -93,7 +94,7 @@
   function _flatten(arr, noDeep, start) { return _flat([], arr, noDeep, start); }
   function _map_compact(list, mapper) {
     for (var i = 0, len = list.length, res = [], val; i < len; i++)
-      if (val = mapper(list[i], i, list)) res.push(val);
+      if ((val = mapper(list[i], i, list)) != undefined) res.push(val);
     return res;
   }
 
@@ -155,6 +156,7 @@
     }
     var filter_or_not = function f(els, selector, func) {
       if (typeof els == 'string') return _(f, _, els, func);
+      if (els == null) return;
       if (!_like_arr(els)) els = [els];
       for (var i = 0, results = [], len = els.length, el; i < len; i++)
         if ((el = els[i]) && func(el, selector)) results.push(el);
@@ -162,6 +164,7 @@
     };
     var prev_or_next = function f(els, selector, p_or_n) {
       if (typeof els == 'string') return _(f, _, els, p_or_n);
+      if (els == null) return;
       if (!_like_arr(els)) return el_return_match(els[p_or_n], selector);
       var predi = make_predi(selector);
       for (var i = 0, results = [], len = els.length, _el, el; i < len; i++)
@@ -170,6 +173,7 @@
     };
     var until = function(els, selector, funcA, funcB) {
       if (typeof els == 'string') return _(f, _, els, funcA, funcB);
+      if (els == null) return;
       if (!_like_arr(els)) els = [els];
       if (!selector) return funcA(els);
       var results = [], el, parents = [];
@@ -185,8 +189,12 @@
       } while(len);
       return results;
     };
+
+
+
     $.children = function f(els, selector) {
       if (typeof els == 'string') return _(f, _, els);
+      if (els == null) return;
       if (!_like_arr(els)) els = [els];
       for (var i = 0, results = [], len = els.length, children, _el; i < len; i++)
         if ((_el = els[i]) && (children = els[i].children))
@@ -196,6 +204,7 @@
     };
     $.closest = function f(els, selector) {
       if (arguments.length == 1) return _(f, _, els);
+      if (els == null) return;
       if (!_like_arr(els)) return els.closest(selector);
       for (var i = 0, results = [], len = els.length, _el, el; i < len; i++)
         if ((_el = els[i]) && (el = _el.closest(selector)) && results.indexOf(el) == -1) results.push(el);
@@ -210,6 +219,7 @@
         return false;
       };
     $.contents = function(els) {
+      if (els == null) return;
       if (!_like_arr(els)) els = [els];
       for (var i = 0, results = [], len = els.length, child_nodes, _el; i < len; i++)
         if ((_el = els[i]) && (child_nodes = _el.childNodes))
@@ -217,8 +227,10 @@
             if ((el = child_nodes[j]) && results.indexOf(el) == -1) results.push(el);
       return results;
     };
+    /* 보류 : 리턴값 null? undefined?  querySelect -> null, find -> undefined ?? */
     $.eq = function f(els, idx) {
       if (arguments.length == 1) return _(f, _, els);
+      if (els == null) return;
       if (!_like_arr(els)) els = [els];
       return els[idx] || null;
     };
@@ -226,6 +238,7 @@
     $.find = function f(parent_els, selector) {
       var parent_els_is_string = typeof parent_els == 'string';
       if (arguments.length == 1 && parent_els_is_string) return _(f, _, parent_els);
+      if (parent_els == null) return;
       if (parent_els_is_string) return [];
       var root, p_els_len = _length(parent_els)
         , selector_is_string = typeof selector == 'string'
@@ -244,8 +257,10 @@
         return results;
       }
     };
+    /* 보류 : return값 뭘로.. */
     $.has = function f(els, selector) {
       if (arguments.length == 1) return _(f, _, els);
+      if (els == null) return;
       if (!_like_arr(els)) return $.find(els, selector).length ? els : null;
       var finders = $.find(els, selector), finders_len = finders.length;
       for (var i = 0, results = [], len = els.length, el; i < len; i++)
@@ -256,6 +271,7 @@
     };
     $.is = function f(els, selector) {
       if (arguments.length == 1) return _(f, _, els);
+      if (els == null) return;
       if (!_like_arr(els)) return match_func(els, selector);
       for (var i = 0, len = els.length, el; i < len; i++)
         if ((el = els[i]) && match_func(el, selector)) return true;
@@ -294,6 +310,7 @@
     $.prev = _(prev_or_next, _, _, 'previousElementSibling');
     $.prev_all = $.prevAll = function f(els, selector) {
       if (typeof els == 'string') return _(f, _, els);
+      if (els == null) return;
       if (!_like_arr(els)) els = [els];
       var results = [], el;
       do {
@@ -306,6 +323,7 @@
     $.prev_until = $.prevUntil = _(until, _, _, $.prevAll, $.prev);
     $.siblings = function f(els, selector) {
       if (typeof els == 'string') return _(f, _, els);
+      if (els == null) return;
       if (!_like_arr(els)) els = [els];
       var predi = make_predi(selector);
       for(var i=0,results = [],len=els.length, _el, parent;i<len;i++)
@@ -322,8 +340,8 @@
         var m, result = [], match = rquick_expr.exec(selector), elem;
         if (match) {
           if (m = match[1]) {
-            if (root.nodeType == 9) result.push(root.getElementById(m));
-            else if ((elem = doc.getElementById(m)) && $.contains(root, elem)) result.push(elem);
+            if (root.nodeType == 9 && (elem = doc.getElementById(m))) result.push(root.getElementById(m));
+            else if (elem && $.contains(root, elem)) result.push(elem);
           }
           else if ((m = match[3]) && root.getElementsByClassName)
             push.apply(result, root.getElementsByClassName(m));
@@ -391,7 +409,7 @@
 
     var class_editor = function f(els, class_name, method) {
       if (!(_is_node(els) || _is_node(els[0]))) return _(f, _, els, method);
-
+      if (els == null) return;
       function editor(el, i) {
         var val = _is_fn(class_name) ? class_name(i, el) : class_name;
         if (val)
@@ -408,18 +426,21 @@
 
     $.has_class = $.hasClass = function f(els, class_name) {
       if (arguments.length == 1) return _(f, _, els);
+      if (els == null) return;
       function some_class(el) { return el.classList.contains(class_name); }
       return _like_arr(els) ? (_find(els, some_class) !== undefined) : some_class(els);
     };
 
     $.attr = function f(els, attr_name, attr_value) {
-      if (_is_str(els)) return arguments.length == 1 ? _(f, _, els) : _(f, _, els, attr_name);
+      if (!_is_el_or_els(els) && els.length != 0) return arguments.length == 1 ? _(f, _, els) : _(f, _, els, attr_name);
+      if (els == null) return;
+
       if (_is_fn(attr_value)) {
         function exec_fn(el, i) { return f(el, attr_name, attr_value(i, el.getAttribute(attr_name), el)) }
         return _like_arr(els) ? _each(els, exec_fn) : exec_fn(els);
       }
 
-      if (arguments.length == 2) {
+      if (arguments.length == 2 && _is_str(attr_name)) {
         var get_iter = function(el) {
           var value = el.getAttribute(attr_name);
           if (value == undefined) return;
@@ -432,15 +453,19 @@
         return _like_arr(els) ? _map(els, get_iter) : get_iter(els);
       }
 
-      if (attr_value == undefined) return els;
+      if (attr_name.constructor == Object) return _each2(attr_name, function(v, k) { f(els, k, v) }), els;
+      if (attr_value === undefined) return els;
+      if (attr_value === null) return $.remove_attr(els, attr_name);
 
       function set_iter(el) { return el.setAttribute(attr_name, attr_value); }
       return _like_arr(els) ? _each(els, set_iter) : set_iter(els);
     };
 
-    $.remove_attr = $.removeAttr = function(els, attr_name) {
-      function rid_attr(el) { return el.removeAttribute(attr_name) }
-      return _like_arr(els) ? _each(els, rid_attr) : rid_attr(els);
+    $.remove_attr = $.removeAttr = function f(els, attr_name) {
+      if (_is_str(els)) return _(f, _, els);
+      if (els == null || !attr_name) return;
+      function rid_attr(el) { el.removeAttribute(attr_name) }
+      return _like_arr(els) ? _each(els, rid_attr) : rid_attr(els), els;
     };
 
     var css_number = {
@@ -465,30 +490,26 @@
     }
 
     $.css = function f(els, prop_name, prop_value) {
-      var len = _length(arguments);
-      if (!(_is_node(els) || _is_node(els[0]))) {
-        if (len == 1) return _(f, _, els);
-        return _(f, _, els, prop_name);
-      }
+      if (!_is_el_or_els(els) && els.length != 0) return arguments.length == 1 ? _(f, _, els) : _(f, _, els, prop_name);
+      if (els == null) return;
 
-      if (len == 2 && (_is_str(prop_name) || _like_arr(prop_name))) {
-        var get_iter = _is_str(prop_name) ?
-          function(el) { return el.ownerDocument.defaultView.getComputedStyle(el, null)[prop_name]; } :
-          function(el) { return _map(prop_name, function(p) { return el.ownerDocument.defaultView.getComputedStyle(el, null)[p]; }) };
+      if (arguments.length == 2 && prop_name.length != null) {
+        var get_iter = Array.isArray(prop_name) ?
+          function(el) { return prop_name.reduce(function(o, p) { o[p] = el.ownerDocument.defaultView.getComputedStyle(el, null)[p]; return o; }, {}) } :
+          function(el) { return el.ownerDocument.defaultView.getComputedStyle(el, null)[prop_name]; };
         return _like_arr(els) ? _map(els, get_iter) : get_iter(els);
       }
 
-      var set_iter = len == 2 ?
-        function(el) { _each2(prop_name, function(attr, name) { el.style[name] = check_css_num(attr, name); }) } :
-        function(el, i) {
-          var val = _is_fn(prop_value) ? prop_value(i, el) : prop_value;
-          if (val) el.style[prop_name] = check_css_num(val, prop_name);
-        };
+      var set_iter = _is_str(prop_name) ? function(el, i) {
+        var val = _is_fn(prop_value) ? prop_value(i, el) : prop_value;
+        if (val) el.style[prop_name] = check_css_num(val, prop_name);
+      } : function(el) { _each2(prop_name, function(attr, name) { el.style[name] = check_css_num(attr, name); }) };
       return _like_arr(els) ? _each(els, set_iter) : set_iter(els), els;
     };
 
     $.remove = function f(els, selector) {
       if (_is_str(els)) return _(f, _, els);
+      if (els == null) return;
       if (selector) {
         function match_sel(el) { return el.matches(selector) }
         if (_like_arr(els)) els = els.filter(match_sel);
@@ -501,6 +522,7 @@
 
     var text_or_html = function f(els, content, getter, method) {
       if (!(_is_node(els) || _is_node(els[0]))) return _(f, _, els, getter, method);
+      if (els == null) return;
       if (content === undefined) return _like_arr(els) ? getter(els) : els[method];
 
       function setter(el, i) {
@@ -545,6 +567,7 @@
           target = _is_str(content) ? $(content) : content;
           elem = els;
         }
+        if (target == null) return;
         if (arguments.length > 2) elem = _flatten(slice.call(arguments, 1));
 
         if (_is_node(elem)) return insert(target, elem);
@@ -552,7 +575,7 @@
           var fn = elem, exec_fn = function(el, i) { return f(el, fn(i, el.innerHTML)) };
           return _like_arr(target) ? _each(target, exec_fn) : exec_fn(target, 0);
         }
-        if (elem == undefined) return reverse ? elem : target;
+        if (elem == null) return reverse ? elem : target;
         if (_is_str(elem)) {
           if (/^<.*>.*/.test(elem)) {
             var temp = document.createElement('div');
@@ -601,9 +624,9 @@
       return default_display[node_name] = display;
     }
     function show_or_hide(els, is_show) {
-      var fn;
+      if (els == null) return;
       if (is_show) {
-        fn = function(el) {
+        function fn(el) {
           if (el.style.display != 'none') {
             if (el.hidden) el.style.display = get_default_display(el);
             return;
@@ -611,16 +634,15 @@
 
           if (el._priv_display) el.style.display = el._priv_display;
           else el.style.display = '';
-        };
+        }
       } else {
-        fn = function(el) {
+        function fn(el) {
           if (el.style.display == 'none') return;
           if (el.style.display) el._priv_display = el.style.display;
           el.style.display = 'none';
-        };
+        }
       }
-      _like_arr(els) ? _each(els, fn) : fn(els);
-      return els;
+      return _like_arr(els) ? _each(els, fn) : fn(els), els;
     }
 
     $.show = _(show_or_hide, _, true);
@@ -634,21 +656,23 @@
     }
 
     $.toggle = function(els, state) {
+      if (els == null) return;
       if (typeof state === "boolean") { return $[state ? 'show' : 'hide'](els); }
-      var fn = function(el) { $[is_hidden_within_tree(el) ? 'show' : 'hide'](el); };
-      return _like_arr(els) ? _each(els, fn) : fn(els), els;
+      function change(el) { $[is_hidden_within_tree(el) ? 'show' : 'hide'](el); }
+      return _like_arr(els) ? _each(els, change) : change(els), els;
     };
 
     $.clone = function(els) {
-      var clone_node = function(el) { return el.cloneNode(true); };
+      if (els == null) return;
+      function clone_node(el) { return el.cloneNode(true); }
       return _like_arr(els) ? _map(els, clone_node) : clone_node(els);
     };
 
     $.empty = function(els) {
-      var fn = function(el) { el.innerHTML = '' };
-      return _like_arr(els) ? _each(els, fn) : fn(els), els;
+      if (els == null) return;
+      function clean(el) { el.innerHTML = '' }
+      return _like_arr(els) ? _each(els, clean) : clean(els), els;
     };
-
 
     function wid_hei_fn(wid_hei_type, wid_hei, window_width_type) {
       // wid_hei_type 1: outer, 2: innerWidth, 3: width
@@ -700,15 +724,16 @@
       }
 
       return function f(els, value) {
-        if (!(_is_el_or_els(els) || _is_win_el_or_els(els) || _check_doc(els))) return _(f, _, els);
+        if (els == null) return;
+        if (!_is_el_or_els(els) && !_is_win_el_or_els(els) && !_check_doc(els) && els.length !=0) return _(f, _, els);
 
         var get_wid_hei = get_wid_hei_val(true, wid_hei_type, wid_hei, value);
 
         if (arguments.length == 1 || value == true) {
           if(_is_win_el_or_els(els))
-            return _like_arr(els) ? els.map(function(v) { return v[window_width_type] }) : els[window_width_type];
+            return _like_arr(els) ? _map(els, function(v) { return v[window_width_type] }) : els[window_width_type];
           if (_check_doc(els)) return _get_doc_wid_hei(els, wid_hei);
-          return _like_arr(els) ? els.map(get_wid_hei) : get_wid_hei(els);
+          return _like_arr(els) ? _map(els, get_wid_hei) : get_wid_hei(els);
         }
 
         function cal_width (el, value) {
@@ -739,7 +764,7 @@
 
 
     $.offsetParent = function f(els) {
-
+      if (els == null) return;
       function offsetParent_iter(el) {
         var offsetParent = el.offsetParent;
         while (offsetParent && $.css( offsetParent, "position" ) === "static") {
@@ -752,6 +777,7 @@
     };
 
     $.position = function f(els) {
+      if (els == null) return;
       function position_iter(el) {
         var offsetParent, offset, parentOffset = { top: 0, left: 0 };
 
@@ -780,8 +806,9 @@
     };
 
     $.offset = function f(els, options) {
+      if (els == null) return;
       // options : function or coordinates
-      if (!_is_el_or_els(els)) return _(f, _, els);
+      if (!_is_el_or_els(els) && els.length != 0) return _(f, _, els);
 
       //setoffset
       if (options) {
@@ -836,7 +863,8 @@
 
 
     $.val = function f(els, value) {
-      if (!_is_el_or_els(els)) return _(f, _, els);
+      if (els == null) return;
+      if (!_is_el_or_els(els) && els.length != 0) return _(f, _, els);
 
       if (arguments.length == 1) {
         function get_iter(el) {
@@ -889,6 +917,7 @@
     };
 
     $.el = function f(html) {
+      if (!_is_str(html)) return;
       if (/^<.*>.*/.test(html)) {
         var div = document.createElement('div');
         div.innerHTML = html;
@@ -899,6 +928,7 @@
     };
 
     $.frag = function f(html) {
+      if (!_is_str(html)) return;
       var doc_frag = document.createDocumentFragment();
       if (/^<.*>.*/.test(html)) {
         var div = document.createElement('div');
@@ -931,10 +961,12 @@
     }
 
     $.scrollTop = function f(el, val) {
+      if (!_is_el_or_els(el) && !_is_win_el_or_els(el) || el == null) return;
       return _scroll_fn(el, val, "pageYOffset", "scrollTop");
     };
 
     $.scrollLeft = function f(el, val) {
+      if (!_is_el_or_els(el) && !_is_win_el_or_els(el) || el == null) return;
       return _scroll_fn(el, val, "pageXOffset", "scrollLeft");
     };
 

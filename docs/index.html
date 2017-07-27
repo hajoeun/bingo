@@ -38,5 +38,60 @@
   <script src="js/partial.js"></script>
   <script src="js/don.js"></script>
   <script src="js/index.js"></script>
+
+  <script>
+    /*var base_arr = [], i = 0;
+    while (++i < 76) base_arr.push(i);
+
+    function find_idx(n) {
+      var i = 4;
+      if (n <= 15) i = 0;
+      else if (n <= 30) i = 1;
+      else if (n <= 45) i = 2;
+      else if (n <= 60) i = 3;
+      return i;
+    }
+
+    function make_bingo(arr) {
+      return arr.reduce(function(o, n) {
+        var i = find_idx(n);
+        return o[i].push(n), o;
+      }, [[],[],[],[],[]])
+    }
+
+    function reduce_first_5(arr) {
+      return arr.reduce(function(l, v, i) {
+        return l[i] = _.first(v, 5), l;
+      }, [])
+    } // var reduce_first_5 = _.reduce((l, v, i) => (l[i] = _.first(v, 5), l), []);
+
+    function make_user_data(arr) {
+      var rand_arr = _.shuffle(arr);
+      return reduce_first_5(make_bingo(rand_arr));
+    } // var make_user_board = _.pipe(_.shuffle, make_bingo, reduce_first_5);
+
+
+    var table_template = _.template('data', `
+        table
+          tr
+            th B
+            th I
+            th N
+            th G
+            th O {{ _.go(data, `, _.template.each('d1', `
+          tr {{ _.go(d1, `, _.template.each('d2',`
+            td {{d2}}
+          `),`)}}`),
+      `)}}
+      `);
+
+    var make_bingo_table = _.pipe(_.unzip, table_template, D.el);
+
+    var make_user_board = _.pipe(make_user_data, make_bingo_table, D.appendTo('.user_board'));
+
+    var make_admin_board = _.pipe(make_bingo, make_bingo_table, D.appendTo('.admin_board'));*/
+  </script>
+
+
 </body>
 </html>
