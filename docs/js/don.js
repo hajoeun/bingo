@@ -45,7 +45,6 @@
 
   function _is_str(o) { return typeof o == 'string'; }
 
-
   var MAX_ARRAY_INDEX = Math.pow(2, 53) - 1;
   function _like_arr(coll) {
     if (coll && coll.nodeType == 1) return false;
@@ -101,20 +100,22 @@
   function _is_fn(o) { return typeof o == 'function'; }
   function _is_numeric(n) { return !isNaN(parseFloat(n)) && isFinite(n); }
 
+  var match_func = function(matches) {
+    return function(el, selector) {
+      return !!el.matches && matches.call(el, selector);
+    }
+  }(doc_el.matches || doc_el.webkitMatchesSelector || doc_el.mozMatchesSelector || doc_el.msMatchesSelector);
+
+  function not_match_func(el, selector) {
+    return !match_func(el, selector);
+  }
+
   // don.js
   !function() {
     var rquick_expr = /^(?:#([\w-]+)|(\w+)|\.([\w-]+))$/,
       combinator_expr = /^\s*[>|+|~]\s*/,
       combinator_expr2 = /[>|+|~]/,
-      combinator_expr3 = /^\s*[+|~]\s*/,
-      match_func = function(matches) {
-        return function(el, selector) {
-          return !!el.matches && matches.call(el, selector);
-        }
-      }(doc_el.matches || doc_el.webkitMatchesSelector || doc_el.mozMatchesSelector || doc_el.msMatchesSelector),
-      not_match_func = function(el, selector) {
-        return !match_func(el, selector);
-      };
+      combinator_expr3 = /^\s*[+|~]\s*/;
 
     if (!Element.prototype.closest) Element.prototype.closest = function (selector) {
       var el = this;
@@ -127,12 +128,11 @@
     function el_return_match(el, selector) {
       return !selector || match_func(el, selector) ? el : null;
     }
-
     function define_root(root) {
       if (!root) return doc;
       var is_string = typeof root == 'string';
       if (!_is_node(root) && !is_string && _like_arr(root)) return root[0];
-      if (is_string) return $(root)[0];
+      if (is_string) return $1(root);
       return root;
     }
     function make_predi(selector) {
@@ -189,9 +189,6 @@
       } while(len);
       return results;
     };
-
-
-
     $.children = function f(els, selector) {
       if (typeof els == 'string') return _(f, _, els);
       if (els == null) return;
@@ -232,7 +229,7 @@
       if (arguments.length == 1) return _(f, _, els);
       if (els == null) return;
       if (!_like_arr(els)) els = [els];
-      return els[idx] || null;
+      return els[idx];
     };
     $.filter = _(filter_or_not, _, _ , match_func);
     $.find = function f(parent_els, selector) {
@@ -285,6 +282,7 @@
     $.not = _(filter_or_not, _, _ , not_match_func);
     $.parent = function f(els, selector) {
       if (typeof els == 'string') return _(f, _, els);
+      if (els == null) return;
       if (!_like_arr(els)) return el_return_match(els.parentElement, selector);
       var predi = make_predi(selector);
       for (var i = 0, results = [], len = els.length, el, _el; i < len; i++)
@@ -293,12 +291,11 @@
     };
     $.parents = function f(els, selector) {
       if (typeof els == 'string') return _(f, _, els);
+      if (els == null) return;
       if (!_like_arr(els)) els = [els];
       var results = [], el, find_parent = selector ? function (els, selector) {
         return $.closest($.parent(els), selector);
-      } : function (els) {
-        return $.parent(els);
-      };
+      } : $.parent;
       do {
         els = find_parent(els, selector);
         for (var i = 0, len = els.length; i < len; i++)
@@ -490,8 +487,8 @@
     }
 
     $.css = function f(els, prop_name, prop_value) {
-      if (!_is_el_or_els(els) && els.length != 0) return arguments.length == 1 ? _(f, _, els) : _(f, _, els, prop_name);
       if (els == null) return;
+      if (!_is_el_or_els(els) && els.length != 0) return arguments.length == 1 ? _(f, _, els) : _(f, _, els, prop_name);
 
       if (arguments.length == 2 && prop_name.length != null) {
         var get_iter = Array.isArray(prop_name) ?
@@ -504,25 +501,26 @@
         var val = _is_fn(prop_value) ? prop_value(i, el) : prop_value;
         if (val) el.style[prop_name] = check_css_num(val, prop_name);
       } : function(el) { _each2(prop_name, function(attr, name) { el.style[name] = check_css_num(attr, name); }) };
+
       return _like_arr(els) ? _each(els, set_iter) : set_iter(els), els;
     };
 
     $.remove = function f(els, selector) {
-      if (_is_str(els)) return _(f, _, els);
       if (els == null) return;
+      if (_is_str(els)) return _(f, _, els);
       if (selector) {
-        function match_sel(el) { return el.matches(selector) }
+        function match_sel(el) { return match_func(el, selector); }
         if (_like_arr(els)) els = els.filter(match_sel);
         else if (!match_sel(els)) return els;
       }
 
       function remove_child(el) { return el.parentNode.removeChild(el) }
-      return _like_arr(els) ? _each(els, remove_child) : remove_child(els, 0);
+      return _like_arr(els) ? _each(els, remove_child) : remove_child(els);
     };
 
     var text_or_html = function f(els, content, getter, method) {
-      if (!(_is_node(els) || _is_node(els[0]))) return _(f, _, els, getter, method);
       if (els == null) return;
+      if (!(_is_node(els) || _is_node(els[0]))) return _(f, _, els, getter, method);
       if (content === undefined) return _like_arr(els) ? getter(els) : els[method];
 
       function setter(el, i) {
@@ -583,7 +581,7 @@
             if (reverse) return f(_map(temp.childNodes, _idtt), target);
             return f(target, _map(temp.childNodes, _idtt));
           }
-          if (reverse) elem = document.querySelectorAll(elem);
+          if (reverse) elem = $(elem);
           else return insert(target, document.createTextNode(elem));
         }
         if (_like_arr(elem)) {
@@ -632,13 +630,13 @@
             return;
           }
 
-          if (el._priv_display) el.style.display = el._priv_display;
+          if (el._prev_display) el.style.display = el._prev_display;
           else el.style.display = '';
         }
       } else {
         function fn(el) {
           if (el.style.display == 'none') return;
-          if (el.style.display) el._priv_display = el.style.display;
+          if (el.style.display) el._prev_display = el.style.display;
           el.style.display = 'none';
         }
       }
@@ -961,58 +959,20 @@
     }
 
     $.scrollTop = function f(el, val) {
-      if (!_is_el_or_els(el) && !_is_win_el_or_els(el) || el == null) return;
+      if (el == null || (!_is_el_or_els(el) && !_is_win_el_or_els(el))) return;
       return _scroll_fn(el, val, "pageYOffset", "scrollTop");
     };
 
     $.scrollLeft = function f(el, val) {
-      if (!_is_el_or_els(el) && !_is_win_el_or_els(el) || el == null) return;
+      if (el == null || (!_is_el_or_els(el) && !_is_win_el_or_els(el))) return;
       return _scroll_fn(el, val, "pageXOffset", "scrollLeft");
     };
 
   }(D);
 
-  // don.event_n_fetch.js
+  // don.event_n_fetch.js, inspired by https://github.com/oneuijs/oui-dom-events/blob/master/build/index.js
   !function() {
-    var ___ = {};
-    var slice = Array.prototype.slice;
-    function _(func) {
-      var parts1 = [], parts2 = [],
-        parts = slice.call(arguments, 1),
-        ___idx = parts.length;
-
-      for (var i in parts)
-        if (parts[i] == ___) ___idx = i;
-        else if (i < ___idx) parts1.push(parts[i]);
-        else parts2.push(parts[i]);
-
-      return function() {
-        var args1 = parts1.slice(), args2 = parts2.slice(),
-          rest = slice.call(arguments);
-
-        for (var i in args1) if (args1[i] == _) args1[i] = rest.shift();
-        for (var i in args2) if (args2[i] == _) args2[i] = rest.pop();
-
-        return func.apply(null, args1.concat(rest.concat(args2)));
-      }
-    }
-    function _each(coll, iter) {
-      for (var i = 0, len = _length(coll); i < len; i++) iter(coll[i], i);
-      return coll;
-    }
-    function _keys(obj) { return _is_object(obj) ? Object.keys(obj) : []; }
-    function _is_object(obj) { return typeof obj == 'object' && !!obj; }
-    function _each2(obj, iter) {
-      for (var i = 0, keys = _keys(obj), len = keys.length; i < len; i++) iter(obj[keys[i]], keys[i]);
-      return obj;
-    }
-    function is_node(node, nt) {
-      return node && typeof node == 'object' &&  (nt = node.nodeType) && (nt == 1 || nt == 9);
-    }
-
     var $ = D;
-    // IE10+ Support
-    // inspired by https://github.com/oneuijs/oui-dom-events/blob/master/build/index.js
 
     var handlers = {};
     var specialEvents = {};
@@ -1054,7 +1014,7 @@
     }
 
     function removeEvent(el, event, selector, callback) {
-      if (_like_arr(el) && !is_node(el) && el != el.window) return _each(el, function(el) {
+      if (_like_arr(el) && !_is_node(el) && el != el.window) return _each(el, function(el) {
         removeEvent(el, event, selector, callback);
       });
 
@@ -1084,7 +1044,7 @@
 
     function bindEvent(el, selector, event, callback, delegator, once) {
       if (!el) return el;
-      if (_like_arr(el) && !is_node(el) && el != el.window) return _each(el, function(el) {
+      if (_like_arr(el) && !_is_node(el) && el != el.window) return _each(el, function(el) {
         bindEvent(el, selector, event, callback, delegator, once);
       });
 
@@ -1153,7 +1113,7 @@
         var matched;
         for (var i = 0, l = els.length; i < l; i++) {
           var child = els[i];
-          if (child === e.target || child.contains(e.target)) {
+          if (child === e.target || $.contains(child, e.target)) {
             e.$currentTarget = matched = child;
             e.$delegateTarget = el;
             break;
@@ -1162,7 +1122,6 @@
         if (matched) {
           if (is_hover) {
             var related = e.relatedTarget;
-
             if (!related || (related !== matched && !$.contains(matched, related))) {
               e.$delegate_called = true;
               return callback.apply(matched, arguments);
@@ -1176,6 +1135,7 @@
     }
 
     D.on = function on(el, eventType, cb_or_sel, callback2) {
+      if (el == null) return;
       if (arguments.length == 2) return _(on, _, el, eventType);
       if (arguments.length == 3) return _is_str(el) ?
         _(on, _, el, eventType, cb_or_sel) : bindEvent(el, null, eventType, cb_or_sel);
@@ -1184,6 +1144,7 @@
     };
 
     D.off = function off(el, eventType, callback, callback2) {
+      if (el == null) return;
       if (_is_str(el)) return arguments.length == 2 ? _(off, _, el, eventType) : _(off, _, el, eventType, callback);
 
       return _is_str(callback) ?
@@ -1192,6 +1153,7 @@
     };
 
     D.one = D.once = function once(el, eventType, cb_or_sel, callback2) {
+      if (el == null) return;
       if (arguments.length == 2) return _(once, _, el, eventType);
       if (arguments.length == 3) return _is_str(el) ?
         _(once, _, el, eventType, cb_or_sel) :
@@ -1201,18 +1163,19 @@
     };
 
     D.trigger = function trigger(el, eventType, props) {
+      if (el == null) return;
       if (arguments.length == 1) return _(trigger, _, el);
 
-      if (_like_arr(el) && !is_node(el) && el != el.window) return _each(el, function(el) {
-        D.triggerHandler(el, makeEvent(eventType, props));
+      if (_like_arr(el) && !_is_node(el) && el != el.window) return _each(el, function(el) {
+        triggerHandler(el, makeEvent(eventType, props));
       });
-      D.triggerHandler(el, makeEvent(eventType, props));
+      triggerHandler(el, makeEvent(eventType, props));
     };
 
-    D.triggerHandler = function(el, e) {
+    function triggerHandler(el, e) {
       el.dispatchEvent(e);
       if (!e.isDefaultPrevented() && e.type == 'submit') el.submit();
-    };
+    }
 
     function makeEvent(eventType, props) {
       var event = document.createEvent(specialEvents[eventType] || 'Events');
@@ -1222,9 +1185,10 @@
       return compatible(event);
     }
 
-    D.submit = function(el) {
-      D.triggerHandler(el, makeEvent('submit'));
-    };
+    /*D.submit = function(el) {
+     if (el == null) return;
+     triggerHandler(el, makeEvent('submit'));
+     };*/
 
     function fetch_to_json(fetched) {
       return fetched.then(function(res) { return res.json() });
@@ -1246,6 +1210,7 @@
 
     D.upload = function(input_or_form, opt) {
       return new Promise(function(resolve) {
+        if (input_or_form == null) return;
         if (input_or_form.nodeName == 'INPUT') {
           var formData = new FormData();
           var files = input_or_form.files;
@@ -1255,13 +1220,13 @@
         }
         var is_multiple = input_or_form.multiple;
         var input_or_form2 = D.el(input_or_form.outerHTML);
-        $.before(input_or_form, input_or_form2);
-        $.remove(input_or_form);
+        D.before(input_or_form, input_or_form2);
+        D.remove(input_or_form);
 
         var xhr = new XMLHttpRequest(), url = D.UPLOAD_URL || '/api/file';
         if (opt) {
           _each(opt.data, function(val, key) { formData.append(key, val); });
-          url = opt.url && url;
+          url = opt.url || url;
           if (opt.progress) xhr.upload.onprogress = function(e) {
             e.lengthComputable && opt.progress((e.loaded / e.total) * 100, e);
           };
@@ -1280,6 +1245,7 @@
     }
 
     D.param = function(a) {
+      if (a == null) return;
       var s = [], rbracket = /\[\]$/,
         isArray = Array.isArray, add = function (k, v) {
           v = typeof v === 'function' ? v() : v === null ? '' : v === undefined ? '' : v;
@@ -1317,7 +1283,5 @@
 
       return buildParams('', a).join('&').replace(/%20/g, '+');
     };
-
   }();
-
 }(window);

@@ -11,7 +11,7 @@
       o => (o.line = { x1: false, x2: false, total: 0 }, o.bingo = false, data.push(o)))
 
     , reduce_first_5 = _.reduce((l, v, i) => (l[i] = _.first(v, 5), l), [])
-    , isChecked = e => e.classList.contains('checked')
+    , isChecked = D.has_class('checked')
     , find_idx = n => {
       var i = 4;
       if (n <= 15) i = 0;
@@ -20,7 +20,7 @@
       else if (n <= 60) i = 3;
       return i;
     }
-    , addLine = __($, $.addClass('line'))
+    , addLine = __($, $.add_class('line'))
     , xLine1 = (c, i) => c[i]
     , xLine2 = (c, i, l) => c[l.length-1-i];
 
