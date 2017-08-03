@@ -537,7 +537,7 @@
     $.textTo = function(els) { if (_is_el_or_els(els)) return _($.text, els) };
     $.htmlTo = function(els) { if (_is_el_or_els(els)) return _($.html, els) };
 
-    function make_insert(type, reverse) {
+    function append_or_insert(type, reverse) {
       function insert(target, elem) {
         var last = target.length - 1 || 0;
         var fns = {
@@ -597,15 +597,15 @@
       }
     }
 
-    $.append = make_insert('append');
-    $.prepend = make_insert('prepend');
-    $.appendTo = $.append_to = make_insert('append', true);
-    $.prependTo = $.prepend_to = make_insert('prepend', true);
+    $.append = append_or_insert('append');
+    $.prepend = append_or_insert('prepend');
+    $.appendTo = $.append_to = append_or_insert('append', true);
+    $.prependTo = $.prepend_to = append_or_insert('prepend', true);
 
-    $.after = make_insert('after');
-    $.before = make_insert('before');
-    $.insertAfter = $.insert_after = make_insert('after', true);
-    $.insertBefore = $.insert_before = make_insert('before', true);
+    $.after = append_or_insert('after');
+    $.before = append_or_insert('before');
+    $.insertAfter = $.insert_after = append_or_insert('after', true);
+    $.insertBefore = $.insert_before = append_or_insert('before', true);
 
     var default_display = {};
 
